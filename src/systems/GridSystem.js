@@ -1,5 +1,6 @@
 import { createCellEntity, createItemEntity, getTextureKey } from '../ecs/Components';
 import Config from '../ecs/MergeConfig';
+import Utils from '../../core/framework/Utils';
 
 export default class GridSystem {
     constructor(scene, boardContainer) {
@@ -46,10 +47,35 @@ export default class GridSystem {
         item.sprite = this.scene.add.image(px, py, getTextureKey(type, level))
             .setDisplaySize(Config.CELL_SIZE - 4, Config.CELL_SIZE - 4)
             .setDepth(1)
-            .setInteractive();
-        this.boardContainer.add(item.sprite);
+            .setInteractive()
+            .setAlpha(0);
+
+        // Store the original scale assigned by setDisplaySize, then start slightly smaller for intro
+        const targetScaleX = item.sprite.scaleX;
+        const targetScaleY = item.sprite.scaleY;
+        const startScaleX = targetScaleX * 0.25;
+        const startScaleY = targetScaleY * 0.25;
+        item.sprite.setScale(startScaleX, startScaleY);
+
+        this.boardContainer.add(item.sprite); 
 
         item.sprite.itemEntity = item;
+        
+        // Animate item appearance with random delay
+        const delay = Math.random() * 800; // Random delay 0-500ms
+        this.scene.tweens.add({
+            targets: item.sprite,
+            alpha: 1,
+            scaleX: targetScaleX,
+            scaleY: targetScaleY,
+            duration: 200,
+            delay: delay,
+            ease: 'Back.easeOut',
+            onStart: () => {
+                Utils.addAudio(this.scene, 'product_spawn', 0.1);
+            }
+        });
+        
         return item;
     }
 

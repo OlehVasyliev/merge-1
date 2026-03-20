@@ -1,12 +1,15 @@
 import ParentScene from "../core/framework/components/Scene";
 import Background from "./Background";
 import Config from "./ecs/MergeConfig";
+import Utils from "../core/framework/Utils";
 import { createGlobalState } from "./ecs/Components";
 import GridSystem from "./systems/GridSystem";
 import InputSystem from "./systems/InputSystem";
 import MergeSystem from "./systems/MergeSystem";
 import CustomerSystem from "./systems/CustomerSystem";
 import HelperSystem from "./systems/HelperSystem";
+import UIManager from "./systems/UIManager";
+import EconomySystem from "./systems/EconomySystem";
 
 export default class Game extends ParentScene {
     create() {
@@ -20,6 +23,9 @@ export default class Game extends ParentScene {
         this.createBoard();
         this.createCTA();
         this.initSystems();
+        
+        // Play background music
+        Utils.addAudio(this, 'music_bg', 1.0, true);
 
         setTimeout(() => {
             this.handleResize();
@@ -54,7 +60,7 @@ export default class Game extends ParentScene {
         // Position the board so its bottom edge is flush with the screen bottom.
         // The visual height includes a small background padding (+20), so compute half-height
         // in container-local units and offset upward (negative py) by that amount.
-        this.boardContainer.py = -((Config.ROWS * Config.CELL_SIZE + 20) * boardScale) / 2;
+        this.boardContainer.py = -((Config.ROWS * Config.CELL_SIZE) * boardScale) / 2;
         this.boardContainer.lx = 0;
         this.boardContainer.ly = 0;
         this.boardContainer.pScaleX = boardScale;
@@ -74,13 +80,13 @@ export default class Game extends ParentScene {
 
         // Board background (behind cells)
         this.boardBg = this.add.image(0, 0, 'board_bg')
-            .setDisplaySize(gridW + 20, gridH + 20)
+            .setDisplaySize(gridW + 22, gridH + 15)
             .setDepth(-2);
         this.boardContainer.add(this.boardBg);
 
         // Table (behind the board but above the board background)
         const tableTex = this.textures.get('table');
-        const tableImage = this.add.image(0, 0, 'table');
+        const tableImage = this.add.image(0, 10, 'table');
         const topOfBoard = -((gridH) / 2);
 
         if (tableTex && tableTex.getSourceImage) {
@@ -93,7 +99,7 @@ export default class Game extends ParentScene {
             tableImage.setPosition(0, topOfBoard - tableH / 2);
 
             this.tableHeight = tableH;
-            this.tableTopY = topOfBoard - tableH;
+            this.tableTopY = topOfBoard - tableH - 10;
         } else {
             // Fallback: stretch to full width of the board container
             const tableH = 200;
@@ -180,24 +186,40 @@ export default class Game extends ParentScene {
 
         // Customer
         this.customerSystem = new CustomerSystem(this, this.customerContainer, this.boardContainer, this.tableTopY, this.tableHeight);
+        this.customerSystem.gridSystem = this.gridSystem;
+        this.customerSystem.globalState = this.globalState;
+
+        // HUD / Economy
+        this.uiManager = new UIManager(this, this.globalState);
+        this.uiManager.init();
+
+        this.economySystem = new EconomySystem(this, this.gridSystem, this.customerSystem, this.uiManager, this.globalState);
+        this.economySystem.init();
+
         this.customerSystem.onOrderFulfilled = () => {
             this.helperSystem.clearCustomerOrder();
-            this.customerSystem.fulfillOrder(this.gridSystem);
-            this.globalState.ordersCompleted++;
-            if (this.globalState.ordersCompleted >= Config.CTA_AFTER_ORDERS) {
-                this.showCTA();
-            }
+            this.economySystem.processOrder();
         };
+
         this.customerSystem.onNewCustomer = (type, level) => {
             this.helperSystem.setCustomerOrder(type, level);
         };
+
         this.customerSystem.onOrderStatusChanged = (isSatisfied, button) => {
             if (isSatisfied) {
                 this.helperSystem.pointToGiveButton(button);
             } else {
-                this.helperSystem.clearCustomerOrder();
+                const req = this.customerSystem.getMissingRequirement(this.gridSystem);
+                if (req && (this.helperSystem.customerTargetType !== req.productType || 
+                            this.helperSystem.customerTargetLevel !== req.targetLevel || 
+                            !this.helperSystem.customerWaiting || 
+                            this.helperSystem.isPointingAtButton)) {
+                    this.helperSystem.isPointingAtButton = false;
+                    this.helperSystem.setCustomerOrder(req.productType, req.targetLevel);
+                }
             }
         };
+
         this.customerSystem.init();
         this.customerSystem.checkOrder(this.gridSystem);
     }

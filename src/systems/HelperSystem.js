@@ -56,13 +56,13 @@ export default class HelperSystem {
         this.customerTargetLevel = level;
         this.customerWaiting = true;
 
-        // Start wiggling suggestions after 1 second
-        this.wiggleTimer = this.scene.time.delayedCall(1000, this.startWiggleCycle, [], this);
-        console.log('[Helper] wiggleTimer set for 1s');
+        // Start wiggling suggestions after 0.5 seconds (2x faster)
+        this.wiggleTimer = this.scene.time.delayedCall(500, this.startWiggleCycle, [], this);
+        console.log('[Helper] wiggleTimer set for 0.5s');
 
-        // Show finger after 3 seconds
-        this.fingerTimer = this.scene.time.delayedCall(3000, this.showFinger, [], this);
-        console.log('[Helper] fingerTimer set for 3s');
+        // Show finger after 1.5 seconds (2x faster)
+        this.fingerTimer = this.scene.time.delayedCall(1500, this.showFinger, [], this);
+        console.log('[Helper] fingerTimer set for 1.5s');
     }
 
     /** Called when the customer order is satisfied / should stop hinting */

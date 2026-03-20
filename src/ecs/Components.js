@@ -33,7 +33,10 @@ export function createGlobalState(idleThreshold) {
         lastInputTime: Date.now(),
         idleThreshold,
         // Game state
-        ordersCompleted: 0
+        ordersCompleted: 0,
+        // Economy
+        totalCoins: 0,
+        currentCustomerIndex: 0
     };
 }
 

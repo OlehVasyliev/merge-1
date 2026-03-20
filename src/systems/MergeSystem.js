@@ -1,5 +1,6 @@
 import { createItemEntity, getTextureKey } from '../ecs/Components';
 import Config from '../ecs/MergeConfig';
+import Utils from '../../core/framework/Utils';
 
 export default class MergeSystem {
     constructor(scene, gridSystem, boardContainer) {
@@ -66,6 +67,16 @@ export default class MergeSystem {
             });
 
             if (this.onMergeSuccess) this.onMergeSuccess(newItem);
+            
+            // Play merge success sound based on level
+            const soundMap = {
+                1: 'merge_lvl_1',
+                2: 'merge_lvl_2',
+                3: 'merge_lvl_3'
+            };
+            const soundKey = soundMap[newLevel] || 'merge_lvl_1';
+            Utils.addAudio(this.scene, soundKey, 0.6 / 1.4);
+            
             return true;
         }
 

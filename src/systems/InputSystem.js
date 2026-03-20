@@ -1,3 +1,5 @@
+import Utils from '../../core/framework/Utils';
+
 export default class InputSystem {
     constructor(scene, gridSystem, boardContainer, globalState) {
         this.scene = scene;
@@ -8,7 +10,9 @@ export default class InputSystem {
         this.dragItem = null;
         this.dragOffsetX = 0;
         this.dragOffsetY = 0;
-
+        this.dragSound = null;
+        this.shakeTweens = [];
+        this.activeShakeTargets = new Set();
         /** @type {function(Object,Object):boolean|null} */
         this.onMergeAttempt = null;
         /** @type {function():void|null} */
@@ -36,6 +40,8 @@ export default class InputSystem {
     onPointerDown(pointer) {
         this.globalState.lastInputTime = Date.now();
         if (this.onInputActivity) this.onInputActivity();
+        
+        Utils.addAudio(this.scene, 'click', 0.4);
 
         const local = this.pointerToBoardLocal(pointer);
         const cellPos = this.grid.pointToCell(local.x, local.y);
@@ -49,6 +55,13 @@ export default class InputSystem {
         item.isDragging = true;
         item.originCol = item.col;
         item.originRow = item.row;
+
+        // Loop drag sound while item is being dragged
+        if (this.dragSound) {
+            this.dragSound.stop();
+            this.dragSound.destroy();
+        }
+        this.dragSound = Utils.addAudio(this.scene, 'drag-and-drop', 2.5, true);
 
         // Detach from cell
         cell.item = null;
@@ -77,6 +90,64 @@ export default class InputSystem {
             (local.x + this.dragOffsetX) * bc.scaleX + bc.x,
             (local.y + this.dragOffsetY) * bc.scaleY + bc.y
         );
+
+        const targetPos = this.grid.pointToCell(
+            local.x + this.dragOffsetX,
+            local.y + this.dragOffsetY
+        );
+
+        if (targetPos) {
+            const targetCell = this.grid.getCell(targetPos.col, targetPos.row);
+            if (targetCell && targetCell.item && this.dragItem.type === targetCell.item.type && this.dragItem.level === targetCell.item.level && this.dragItem.level < 4) {
+                this.startShake(this.dragItem.sprite);
+                this.startShake(targetCell.item.sprite);
+            } else {
+                this.stopShakeAll();
+            }
+        } else {
+            this.stopShakeAll();
+        }
+    }
+
+    startShake(sprite) {
+        if (!sprite || !sprite.scene) return;
+        if (this.activeShakeTargets.has(sprite)) return;
+
+        const tween = this.scene.tweens.add({
+            targets: sprite,
+            angle: { from: -4, to: 4 },
+            duration: 70,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+
+        this.shakeTweens.push(tween);
+        this.activeShakeTargets.add(sprite);
+    }
+
+    stopShake(sprite) {
+        if (!sprite) return;
+        this.activeShakeTargets.delete(sprite);
+
+        const index = this.shakeTweens.findIndex(t => t.targets && Array.isArray(t.targets) && t.targets.includes(sprite));
+        if (index !== -1) {
+            const tween = this.shakeTweens[index];
+            tween.stop();
+            this.shakeTweens.splice(index, 1);
+            sprite.setAngle(0);
+        }
+    }
+
+    stopShakeAll() {
+        this.shakeTweens.forEach(t => {
+            if (t.targets && Array.isArray(t.targets)) {
+                t.targets.forEach(obj => obj.setAngle(0));
+            }
+            t.stop();
+        });
+        this.shakeTweens = [];
+        this.activeShakeTargets.clear();
     }
 
     onPointerUp(pointer) {
@@ -93,11 +164,8 @@ export default class InputSystem {
         item.isDragging = false;
         this.dragItem = null;
 
-        // Return sprite to boardContainer before placement / snap-back
         const mc = this.scene.mainContainer;
         const bc = this.boardContainer;
-        mc.remove(item.sprite, false);
-        bc.add(item.sprite);
 
         let handled = false;
         if (targetPos) {
@@ -107,9 +175,40 @@ export default class InputSystem {
             }
         }
 
-        if (!handled) {
-            // Snap back to origin
-            this.grid.placeItem(item, item.originCol, item.originRow);
+        this.stopShakeAll();
+
+        if (this.dragSound) {
+            this.dragSound.stop();
+            this.dragSound.destroy();
+            this.dragSound = null;
         }
+
+        if (!handled) {
+            // Merge failed - play fail sound
+            Utils.addAudio(this.scene, 'merge_fail', 0.5);
+            
+            // Animate return to origin cell if merge didn't succeed
+            const originX = bc.x + this.grid.cellToX(item.originCol) * bc.scaleX;
+            const originY = bc.y + this.grid.cellToY(item.originRow) * bc.scaleY;
+
+            this.scene.tweens.add({
+                targets: item.sprite,
+                x: originX,
+                y: originY,
+                duration: 400,
+                ease: 'Cubic.easeOut',
+                onComplete: () => {
+                    // Put sprite back in board container and restore cell state
+                    mc.remove(item.sprite, false);
+                    bc.add(item.sprite);
+                    this.grid.placeItem(item, item.originCol, item.originRow);
+                }
+            });
+        } else {
+            // Clean up immediately for successful merge scenario (handled by MergeSystem)
+            mc.remove(item.sprite, false);
+            bc.add(item.sprite);
+        }
+
     }
 }
