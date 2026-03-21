@@ -12,10 +12,10 @@ export default class EconomySystem {
     }
 
     init() {
-        // Nothing to initialise yet – wiring happens in Game.js
+
     }
 
-    /** Called when the player clicks the "Give" button and the order is valid */
+    
     processOrder() {
         const cs = this.customerSystem;
         const rewardAmount = cs.rewardAmount;
@@ -25,14 +25,12 @@ export default class EconomySystem {
             this.animateProductsToCustomer(matched).then(() => {
                 matched.forEach(item => this.gridSystem.removeItem(item));
 
-                // Step 2 – hide customer UI (cloud, button, portrait slide-out)
                 cs.fulfillOrder();
 
-                // Step 3 – spawn coins at customer position and fly them to the HUD counter
                 this.spawnFlyingCoins(rewardAmount);
             });
         } else {
-            // Fallback: no matching items found, still fulfill order and spawn coins
+
             cs.fulfillOrder();
             this.spawnFlyingCoins(rewardAmount);
         }
@@ -94,27 +92,24 @@ export default class EconomySystem {
         });
     }
 
-    /** Spawn gold_1 sprites and tween them to the coin counter */
+    
     spawnFlyingCoins(amount) {
-        // Play money sound
+
         Utils.addAudio(this.scene, 'money', 0.6);
-        
-        // Determine spawn origin (customer portrait world position)
+
         const portrait = this.customerSystem.portraitSprite;
         const portraitMat = portrait.getWorldTransformMatrix();
         const spawnX = portraitMat.tx + 50;
         const spawnY = portraitMat.ty - 65;
 
-        // Coin counter target (world position)
         const target = this.uiManager.getCoinTargetPosition();
 
-        // Limit visual coins to avoid performance issues; map reward to 5-10 sprites
         const coinCount = Math.min(amount, 10);
         const coinsPerSprite = amount / coinCount;
         let coinsAdded = 0;
 
         for (let i = 0; i < coinCount; i++) {
-            // Burst spread: random offset
+
             const ox = (Math.random() - 0.5) * 8;
             const oy = (Math.random() - 0.5) * 8;
 
@@ -122,7 +117,6 @@ export default class EconomySystem {
                 .setDisplaySize(24, 24)
                 .setDepth(2000);
 
-            // Staggered fly-to-counter tween
             this.scene.tweens.add({
                 targets: coin,
                 x: target.x - 38,
@@ -135,17 +129,16 @@ export default class EconomySystem {
                 onComplete: () => {
                     coin.destroy();
 
-                    // Increment balance
                     const portion = (i === coinCount - 1)
                         ? amount - coinsAdded
                         : Math.round(coinsPerSprite);
                     coinsAdded += portion;
                     this.globalState.totalCoins += portion;
 
-                    // Update HUD
                     this.uiManager.updateCoinDisplay();
                 }
             });
         }
     }
 }
+

@@ -9,20 +9,18 @@ export default class HelperSystem {
 
         this.fingerSprite = null;
 
-        // Helper scale presets
         this.productFingerScale = 0.8;
         this.buttonFingerScale = 1.3;
 
-        // Customer order tracking
         this.customerTargetType = null;
         this.customerTargetLevel = null;
         this.customerWaiting = false;
+        this.onlyPointToGiveButton = false; // когда заказ готов, только кнопка
+        this.targetGiveButton = null;
 
-        // Suggestion state
         this.suggestionPair = null;
         this.isPointingAtButton = false;
 
-        // Timers / tweens
         this.wiggleTimer = null;
         this.fingerTimer = null;
         this.btnPointerTimer = null;
@@ -40,15 +38,22 @@ export default class HelperSystem {
             .setAlpha(0)
             .setOrigin(0.2, 0.1);
 
-        // Add to mainContainer so helper can layer above the customer card.
-        // Board positions will be converted into mainContainer space when needed.
+
         if (this.scene.mainContainer) {
             this.scene.mainContainer.add(this.fingerSprite);
         }
     }
 
-    /** Called when a new customer appears */
+    
     setCustomerOrder(type, level) {
+        if (this.onlyPointToGiveButton) {
+            // Когда заказ готов, не предлагаем мерж — продолжаем указывать на кнопку.
+            if (this.targetGiveButton) {
+                this.pointToGiveButton(this.targetGiveButton);
+            }
+            return;
+        }
+
         console.log('[Helper] setCustomerOrder:', type, level);
         this.clearHint();
 
@@ -56,19 +61,18 @@ export default class HelperSystem {
         this.customerTargetLevel = level;
         this.customerWaiting = true;
 
-        // Start wiggling suggestions after 0.5 seconds (2x faster)
         this.wiggleTimer = this.scene.time.delayedCall(500, this.startWiggleCycle, [], this);
         console.log('[Helper] wiggleTimer set for 0.5s');
 
-        // Show finger after 1.5 seconds (2x faster)
         this.fingerTimer = this.scene.time.delayedCall(1500, this.showFinger, [], this);
         console.log('[Helper] fingerTimer set for 1.5s');
     }
 
-    /** Called when the customer order is satisfied / should stop hinting */
+    
     clearCustomerOrder() {
         this.customerWaiting = false;
         this.isPointingAtButton = false;
+        this.onlyPointToGiveButton = false;
         if (this.btnPointerTimer) {
             this.btnPointerTimer.remove(false);
             this.btnPointerTimer = null;
@@ -76,35 +80,47 @@ export default class HelperSystem {
         this.clearHint();
     }
 
-    /** Called when the order is ready to be given to the customer */
+    
     pointToGiveButton(button) {
-        if (this.isPointingAtButton) return;
+        if (!button) return;
+        if (this.isPointingAtButton && this.targetGiveButton === button) return;
+
+        this.onlyPointToGiveButton = true;
+        this.targetGiveButton = button;
+        this.customerWaiting = true;
         this.clearHint();
         this.isPointingAtButton = true;
 
+        this.ensureFingerOnTop();
+
+        const btnWorld = button.getWorldTransformMatrix();
+        const mainMatrix = this.scene.mainContainer.getWorldTransformMatrix();
+        const invMain = mainMatrix.invert();
+        const localBtn = invMain.transformPoint(btnWorld.tx, btnWorld.ty);
+
+        this.fingerSprite.setPosition(localBtn.x, localBtn.y).setAlpha(1);
+        this.fingerSprite.setScale(1.3);
+
+        if (this.fingerTween) {
+            this.fingerTween.stop();
+            this.fingerTween = null;
+        }
+
+        this.fingerTween = this.scene.tweens.add({
+            targets: this.fingerSprite,
+            scaleX: 1.0,
+            scaleY: 1.0,
+            duration: 200,
+            yoyo: true,
+            repeat: -1,
+            repeatDelay: 300
+        });
+
+        // Через 1 секунду оставляем цикл, если пользователю не хватает мгновенного эффекта.
         this.btnPointerTimer = this.scene.time.delayedCall(1000, () => {
             if (!this.isPointingAtButton) return;
-
             this.ensureFingerOnTop();
-
-            const btnWorld = button.getWorldTransformMatrix();
-            const mainMatrix = this.scene.mainContainer.getWorldTransformMatrix();
-            const invMain = mainMatrix.invert();
-            const localBtn = invMain.transformPoint(btnWorld.tx, btnWorld.ty);
-
             this.fingerSprite.setPosition(localBtn.x, localBtn.y).setAlpha(1);
-
-            // Animate finger click (large → small)
-            this.fingerSprite.setScale(1.3);
-            this.fingerTween = this.scene.tweens.add({
-                targets: this.fingerSprite,
-                scaleX: 1.0,
-                scaleY: 1.0,
-                duration: 200,
-                yoyo: true,
-                repeat: -1,
-                repeatDelay: 300
-            });
         });
     }
 
@@ -147,7 +163,7 @@ export default class HelperSystem {
 
     startWiggleCycle() {
         console.log('[Helper] startWiggleCycle called, customerWaiting:', this.customerWaiting);
-        if (!this.customerWaiting) return;
+        if (!this.customerWaiting || this.onlyPointToGiveButton) return;
 
         const pair = this.findSuggestionPair();
         if (!pair) {
@@ -164,7 +180,7 @@ export default class HelperSystem {
         }
 
         console.log('[Helper] Starting wiggle animation with', sprites.length, 'sprites');
-        // Ensure any previous wiggle or grow is stopped
+
         if (this.wiggleTween) {
             this.wiggleTween.stop();
             this.wiggleTween = null;
@@ -174,15 +190,13 @@ export default class HelperSystem {
             this.growTween = null;
         }
 
-        // Ensure base state (angle only; keep current scale)
         sprites.forEach(s => {
             s.setAngle(0);
-            // Store the current scale so we can scale relative to it
+
             s._helperBaseScaleX = s.scaleX;
             s._helperBaseScaleY = s.scaleY;
         });
 
-        // Grow/shrink, then wiggle
         this.growTween = this.scene.tweens.timeline({
             targets: sprites,
             ease: 'Linear',
@@ -215,7 +229,7 @@ export default class HelperSystem {
 
     showFinger() {
         console.log('[Helper] showFinger called, customerWaiting:', this.customerWaiting);
-        if (!this.customerWaiting) return;
+        if (!this.customerWaiting || this.onlyPointToGiveButton) return;
 
         const pair = this.suggestionPair || this.findSuggestionPair();
         if (!pair) {
@@ -278,7 +292,7 @@ export default class HelperSystem {
     }
 
     toMainX(boardX) {
-        // Convert board-local x coordinate into mainContainer space
+
         const boardMatrix = this.boardContainer.getWorldTransformMatrix();
         const mainMatrix = this.scene.mainContainer.getWorldTransformMatrix();
         const invMain = mainMatrix.invert();
@@ -287,7 +301,7 @@ export default class HelperSystem {
     }
 
     toMainY(boardY) {
-        // Convert board-local y coordinate into mainContainer space
+
         const boardMatrix = this.boardContainer.getWorldTransformMatrix();
         const mainMatrix = this.scene.mainContainer.getWorldTransformMatrix();
         const invMain = mainMatrix.invert();
@@ -309,16 +323,15 @@ export default class HelperSystem {
             this.fingerTween.stop();
             this.fingerTween = null;
         }
-        // Reset to product scale so the helper remains small when it next points at tiles.
+
         this.fingerSprite.setScale(this.productFingerScale);
         this.fingerSprite.setAlpha(0);
     }
 
-    /** Find two items that best approximate assembling the current order. */
+    
     findSuggestionPair() {
         if (!this.customerWaiting || !this.customerTargetType) return null;
 
-        // Prefer items that are one level below the target (closest to completion)
         const maxLevel = Math.max(1, this.customerTargetLevel - 1);
         for (let level = maxLevel; level >= 1; level--) {
             const candidates = this.grid.items.filter(i => i.type === this.customerTargetType && i.level === level);
@@ -326,7 +339,6 @@ export default class HelperSystem {
             if (closest) return closest;
         }
 
-        // Fallback: any mergeable pair on board (closest pair if multiple exist)
         const allPairs = [];
         const items = this.grid.items.filter(i => i.level < Config.MAX_LEVEL);
         for (let i = 0; i < items.length; i++) {
@@ -378,14 +390,22 @@ export default class HelperSystem {
         const type = this.customerTargetType;
         const level = this.customerTargetLevel;
 
+        // чтобы не потерять состояние готового заказа
+        if (hasOrder && this.onlyPointToGiveButton && this.targetGiveButton) {
+            console.log('[Helper] resetIdle: keep pointing to give button');
+            this.pointToGiveButton(this.targetGiveButton);
+            this.globalState.lastInputTime = Date.now();
+            return;
+        }
+
         this.clearHint();
         this.globalState.lastInputTime = Date.now();
 
-        // If a customer is still waiting, restart the helper timers.
         if (hasOrder) {
             console.log('[Helper] Restarting helper for active customer');
             this.setCustomerOrder(type, level);
         }
     }
 }
+
 

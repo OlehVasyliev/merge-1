@@ -8,24 +8,19 @@ export default class MergeSystem {
         this.grid = gridSystem;
         this.boardContainer = boardContainer;
 
-        /** @type {function(Object):void|null} */
+        
         this.onMergeSuccess = null;
     }
 
-    /**
-     * Try to merge dragItem into targetCell.
-     * Returns true if the action was handled (merge or simple move).
-     */
+    
     tryMerge(dragItem, targetCell) {
         const targetItem = targetCell.item;
 
-        // Empty cell → just place the item
         if (!targetItem) {
             this.grid.placeItem(dragItem, targetCell.col, targetCell.row);
             return true;
         }
 
-        // Same type + same level + not max → merge
         if (
             dragItem.type === targetItem.type &&
             dragItem.level === targetItem.level &&
@@ -36,11 +31,9 @@ export default class MergeSystem {
             const col = targetCell.col;
             const row = targetCell.row;
 
-            // Destroy both old items
             this.grid.removeItem(targetItem);
             this.grid.removeItem(dragItem);
 
-            // Spawn the upgraded item
             const newItem = createItemEntity(col, row, type, newLevel);
             const px = this.grid.cellToX(col);
             const py = this.grid.cellToY(row);
@@ -56,7 +49,6 @@ export default class MergeSystem {
             cell.item = newItem;
             this.grid.items.push(newItem);
 
-            // Pop animation
             this.scene.tweens.add({
                 targets: newItem.sprite,
                 scaleX: newItem.sprite.scaleX * 1.3,
@@ -67,8 +59,7 @@ export default class MergeSystem {
             });
 
             if (this.onMergeSuccess) this.onMergeSuccess(newItem);
-            
-            // Play merge success sound based on level
+
             const soundMap = {
                 1: 'merge_lvl_1',
                 2: 'merge_lvl_2',
@@ -80,7 +71,7 @@ export default class MergeSystem {
             return true;
         }
 
-        // Conditions not met → caller should snap back
         return false;
     }
 }
+

@@ -34,7 +34,7 @@ export default class GridSystem {
         }
     }
 
-    /* ---- helpers ---- */
+    
 
     createRandomItem(col, row) {
         const type  = Math.floor(Math.random() * Config.PRODUCT_TYPES) + 1;
@@ -50,7 +50,6 @@ export default class GridSystem {
             .setInteractive()
             .setAlpha(0);
 
-        // Store the original scale assigned by setDisplaySize, then start slightly smaller for intro
         const targetScaleX = item.sprite.scaleX;
         const targetScaleY = item.sprite.scaleY;
         const startScaleX = targetScaleX * 0.25;
@@ -60,8 +59,7 @@ export default class GridSystem {
         this.boardContainer.add(item.sprite); 
 
         item.sprite.itemEntity = item;
-        
-        // Animate item appearance with random delay
+
         const delay = Math.random() * 800; // Random delay 0-500ms
         this.scene.tweens.add({
             targets: item.sprite,
@@ -123,7 +121,7 @@ export default class GridSystem {
         if (item.sprite) item.sprite.destroy();
     }
 
-    /** Convert board-local pixel coords → grid col/row */
+    
     pointToCell(bx, by) {
         const col = Math.round(bx / Config.CELL_SIZE + (Config.COLS - 1) / 2);
         const row = Math.round(by / Config.CELL_SIZE + (Config.ROWS - 1) / 2);
@@ -131,7 +129,7 @@ export default class GridSystem {
         return { col, row };
     }
 
-    /** Find any two items that can merge (same type & level, not max) */
+    
     findMatchingPair() {
         const map = {};
         for (const item of this.items) {
@@ -143,8 +141,9 @@ export default class GridSystem {
         return null;
     }
 
-    /** First item on the board matching the given type + level */
+    
     findItemByTypeAndLevel(type, level) {
         return this.items.find(i => i.type === type && i.level === level) || null;
     }
 }
+

@@ -13,9 +13,9 @@ export default class InputSystem {
         this.dragSound = null;
         this.shakeTweens = [];
         this.activeShakeTargets = new Set();
-        /** @type {function(Object,Object):boolean|null} */
+        
         this.onMergeAttempt = null;
-        /** @type {function():void|null} */
+        
         this.onInputActivity = null;
     }
 
@@ -25,7 +25,7 @@ export default class InputSystem {
         this.scene.input.on('pointerup',   this.onPointerUp,   this);
     }
 
-    /* Convert pointer (game-pixel coords) → board-local coords */
+    
     pointerToBoardLocal(pointer) {
         const mc = this.scene.mainContainer;
         const bc = this.boardContainer;
@@ -56,17 +56,14 @@ export default class InputSystem {
         item.originCol = item.col;
         item.originRow = item.row;
 
-        // Loop drag sound while item is being dragged
         if (this.dragSound) {
             this.dragSound.stop();
             this.dragSound.destroy();
         }
         this.dragSound = Utils.addAudio(this.scene, 'drag-and-drop', 2.5, true);
 
-        // Detach from cell
         cell.item = null;
 
-        // Lift to mainContainer so dragged item renders above all other containers
         const bc = this.boardContainer;
         const mc = this.scene.mainContainer;
         const bx = this.grid.cellToX(item.col);
@@ -184,10 +181,9 @@ export default class InputSystem {
         }
 
         if (!handled) {
-            // Merge failed - play fail sound
+
             Utils.addAudio(this.scene, 'merge_fail', 0.5);
-            
-            // Animate return to origin cell if merge didn't succeed
+
             const originX = bc.x + this.grid.cellToX(item.originCol) * bc.scaleX;
             const originY = bc.y + this.grid.cellToY(item.originRow) * bc.scaleY;
 
@@ -198,17 +194,18 @@ export default class InputSystem {
                 duration: 400,
                 ease: 'Cubic.easeOut',
                 onComplete: () => {
-                    // Put sprite back in board container and restore cell state
+
                     mc.remove(item.sprite, false);
                     bc.add(item.sprite);
                     this.grid.placeItem(item, item.originCol, item.originRow);
                 }
             });
         } else {
-            // Clean up immediately for successful merge scenario (handled by MergeSystem)
+
             mc.remove(item.sprite, false);
             bc.add(item.sprite);
         }
 
     }
 }
+
