@@ -3,93 +3,85 @@ import Config from '../ecs/MergeConfig';
 import Utils from '../../core/framework/Utils';
 
 export default class CustomerSystem {
-    constructor(scene, container, boardContainer, tableTopY, tableHeight) {
+    constructor(scene, container, boardContainer, tableTopY, tableHeight, customerOffsetX = 0) {
         this.scene = scene;
         this.container = container;
         this.boardContainer = boardContainer;
         this.tableTopY = tableTopY;
         this.tableHeight = tableHeight;
+        this.customerOffsetX = customerOffsetX - 40;
 
-        // CustomerData + OrderRequirement
         this.portraitId        = 0;
         this.orderRequirements = []; // [{ productType, targetLevel, isSatisfied }]
         this.rewardAmount      = 0;
         this.isSatisfied       = false;
 
-        // Sprites
         this.portraitSprite = null;
         this.cloudSprite    = null;
         this.orderSprites   = []; // multi product icons in cloud
         this.rewardGroup    = null;
         this.giveButton     = null;
 
-        /** @type {function():void|null} */
+        
         this.onOrderFulfilled = null;
 
-        /** @type {function(number, number):void|null} */
+        
         this.onNewCustomer = null;
-        /** @type {function(boolean, Object):void|null} */
+        
         this.onOrderStatusChanged = null;
 
-        // external references (injected from Game)
         this.gridSystem = null;
         this.globalState = null;
     }
 
     init() {
-        // Start the customer area off-screen to the right so the card can slide in.
-        this.container.x = this.scene.game.size.right + 150;
 
-        // Build animation sequences from loaded textures or atlases (customer_1_0.., customer_2_0.., etc.)
+        this.container.x = this.scene.game.size.right + 150 + this.customerOffsetX;
+
         this.createCustomerAnimations();
 
-        // Animated portrait (uses a looping animation for the current customer type)
         const initial = this.getCustomerInitialFrame(1);
-        // Shift the customer body slightly to the left for better layout
-        this.portraitSprite = this.scene.add.sprite(-130, 0, initial.textureKey, initial.frame)
+        this.portraitSprite = this.scene.add.sprite(-130, 20, initial.textureKey, initial.frame)
             .setScale(1.5)
             .setDepth(5);
         this.container.add(this.portraitSprite);
 
-        // Cloud: placed on the table (not inside the customer container)
         const cloudHeight = 60;
-        const cloudY = (this.tableTopY || -200) + (cloudHeight / 2);
-        this.cloudSprite = this.scene.add.image(-110, cloudY - cloudHeight * 0.75, 'customer_cloude_of_proucts')
+        const cloudY = (this.tableTopY || -200) + (cloudHeight / 2) - 20; // Привязка к столу
+        
+        this.cloudSprite = this.scene.add.image(-80, cloudY - 26, 'customer_cloude_of_proucts')
             .setDisplaySize(120, cloudHeight)
-            .setDepth(5);
-        (this.boardContainer || this.container).add(this.cloudSprite);
+            .setDepth(15);
 
-        // Placeholder for order icons: created per order dynamically
+        this.boardContainer.add(this.cloudSprite);
+
         this.orderSprites = [];
 
-        // Reward tag container (gold icon + text)
         this.rewardGroup = this.scene.add.container(this.cloudSprite.x + 35, this.cloudSprite.y, []);
-        this.rewardGroup.setDepth(6).setAlpha(0);
+        this.rewardGroup.setDepth(16).setAlpha(0);
+
+
+
+
+
         
-        // Background with rounded corners for reward tag
-        // const rewardBgGraphics = this.scene.make.graphics({ x: 0, y: 0, add: false });
-        // rewardBgGraphics.fillStyle(0x555555, 0.3); // Semi-transparent gray
-        // rewardBgGraphics.fillRoundedRect(-18, -28, 54, 28, 6); // x, y, width, height, radius
-        // this.rewardGroup.add(rewardBgGraphics);
-        
-        const rewardIcon = this.scene.add.image(0+12, 0 - 64, 'gold_1').setDisplaySize(18, 18);
+        const rewardIcon = this.scene.add.image(0+12, - 64, 'gold_1').setDisplaySize(18, 18);
         this.rewardText = this.scene.add.text(14+12, -8 - 64, 'x0', { fontFamily: 'Arial', fontSize: '14px', color: '#ffffff', stroke: '#000000', strokeThickness: 2 });
         this.rewardGroup.add([rewardIcon, this.rewardText]);
-        (this.boardContainer || this.container).add(this.rewardGroup);
+        this.boardContainer.add(this.rewardGroup);
 
-        // Button: placed on the table near the cloud (not inside customer container)
         const buttonWidth = 90;
         const buttonHeight = 45;
         const buttonX = this.cloudSprite.x;
         const buttonY = this.cloudSprite.y - (cloudHeight / 2) - (buttonHeight / 2);
 
-        this.giveButton = this.scene.add.image(buttonX+140, buttonY+60, 'btn_give_to_customer')
+        this.giveButton = this.scene.add.image(buttonX + 140, buttonY + 60, 'btn_give_to_customer')
             .setDisplaySize(buttonWidth, buttonHeight)
-            .setDepth(7)
+            .setDepth(16)
             .setAlpha(0.4);
         this.giveButton.setInteractive();
         this.giveButton.on('pointerdown', this.onGiveClicked, this);
-        (this.boardContainer || this.container).add(this.giveButton);
+        this.boardContainer.add(this.giveButton);
 
         this.generateNewCustomer();
     }
@@ -108,7 +100,6 @@ export default class CustomerSystem {
                     ? Object.keys(atlas.frames).filter(name => name.startsWith(`customer_${type}_`))
                     : [];
 
-            // Sort by numeric suffix (customer_1_0, customer_1_1, ...)
             return frameNames.sort((a, b) => {
                 const aNum = parseInt(a.split('_').pop(), 10);
                 const bNum = parseInt(b.split('_').pop(), 10);
@@ -116,7 +107,6 @@ export default class CustomerSystem {
             });
         }
 
-        // Fallback to individual texture keys.
         return Object.keys(this.scene.textures.list)
             .filter(key => key.startsWith(`customer_${type}_`))
             .sort((a, b) => {
@@ -138,7 +128,6 @@ export default class CustomerSystem {
             return { textureKey: frameNames[0], frame: null };
         }
 
-        // Fallback: use the atlas key as texture key (may be missing, but avoids undefined)
         return { textureKey: atlasKey, frame: null };
     }
 
@@ -199,7 +188,7 @@ export default class CustomerSystem {
             const req = this.orderRequirements[i];
             const icon = this.scene.add.image(startX + i * spacing, this.cloudSprite.y, getTextureKey(req.productType, req.targetLevel))
                 .setDisplaySize(35, 35)
-                .setDepth(6)
+                .setDepth(16)
                 .setAlpha(0);
             (this.boardContainer || this.container).add(icon);
             this.orderSprites.push(icon);
@@ -213,8 +202,7 @@ export default class CustomerSystem {
         }
 
         this.rewardGroup.setPosition(this.cloudSprite.x + 48, this.cloudSprite.y - 2);
-        
-        // Animate reward group in
+
         this.rewardGroup.setAlpha(0);
         this.scene.tweens.add({
             targets: this.rewardGroup,
@@ -311,8 +299,8 @@ export default class CustomerSystem {
 
         this.giveButton.setAlpha(0.4);
 
-        const targetX = this.scene.game.size.x;
-        const startX = this.scene.game.size.right + 150;
+        const targetX = this.scene.game.size.x + this.customerOffsetX;
+        const startX = this.scene.game.size.right + 150 + this.customerOffsetX;
         this.container.x = startX;
 
         this.scene.tweens.add({
@@ -338,7 +326,7 @@ export default class CustomerSystem {
         });
     }
 
-    /** Re-evaluate whether the current order can be fulfilled */
+    
     checkOrder(gridSystem) {
         if (!this.orderRequirements.length) {
             this.isSatisfied = false;
@@ -379,12 +367,12 @@ export default class CustomerSystem {
     fulfillOrder() {
         this.giveButton.setAlpha(0.4);
         this.scene.tweens.add({
-            targets: [this.portraitSprite, this.cloudSprite, this.rewardGroup, ...this.orderSprites],
+            targets: [this.portraitSprite, this.rewardGroup, ...this.orderSprites],
             alpha: 0,
             duration: 250,
             onComplete: () => {
                 this.portraitSprite.setAlpha(1);
-                this.cloudSprite.setAlpha(1);
+
                 this.rewardGroup.setAlpha(0);
                 this.orderSprites.forEach(sprite => sprite.destroy());
                 this.orderSprites = [];
@@ -396,4 +384,21 @@ export default class CustomerSystem {
             }
         });
     }
+
+    update(time, delta) {
+        if (this.portraitSprite && this.cloudSprite && this.container && this.boardContainer) {
+            if (this.container.scaleY !== 0 && this.container.scaleX !== 0) {
+
+                const cloudWorldX = this.boardContainer.x + (this.cloudSprite.x * this.boardContainer.scaleX);
+                const cloudWorldY = this.boardContainer.y + (this.cloudSprite.y * this.boardContainer.scaleY);
+
+                const portraitLocalX = (cloudWorldX - this.container.x) / this.container.scaleX;
+                const portraitLocalY = (cloudWorldY - this.container.y) / this.container.scaleY;
+
+                this.portraitSprite.x = portraitLocalX + 20;
+                this.portraitSprite.y = portraitLocalY - 40;
+            }
+        }
+    }
 }
+

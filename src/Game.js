@@ -23,8 +23,7 @@ export default class Game extends ParentScene {
         this.createBoard();
         this.createCTA();
         this.initSystems();
-        
-        // Play background music
+
         Utils.addAudio(this, 'music_bg', 1.0, true);
 
         setTimeout(() => {
@@ -36,7 +35,7 @@ export default class Game extends ParentScene {
         }, 11);
     }
 
-    /* ---- Layout ---- */
+    
 
     createBoard() {
         const gridW = Config.COLS * Config.CELL_SIZE;
@@ -47,44 +46,49 @@ export default class Game extends ParentScene {
         this.boardContainer.setCustomPosition(0, 0).setAlign("Bottom");
         this.boardContainer.setDepth(10);
 
-        // Calculate scale in the game's designed coordinate space (scaled by game.size.scale)
-        // so that the board fills the visible width, and its height stays <= 80% of the visible height.
+
+        const UNDERLAY_RATIO = Config.UNDERLAY_RATIO;
         const availW = this.game.size.right - this.game.size.left;
         const availH = this.game.size.bottom - this.game.size.top;
-        const maxBoardH = availH * 0.75;
-        const scaleW = availW / gridW;
+        const usableW = availW * 0.95;
+        const maxBoardH = availH * UNDERLAY_RATIO;
+        const scaleW = usableW / gridW;
         const scaleH = maxBoardH / gridH;
         const boardScale = Math.min(scaleW, scaleH);
 
         this.boardContainer.px = 0;
-        // Position the board so its bottom edge is flush with the screen bottom.
-        // The visual height includes a small background padding (+20), so compute half-height
-        // in container-local units and offset upward (negative py) by that amount.
-        this.boardContainer.py = -((Config.ROWS * Config.CELL_SIZE) * boardScale) / 2;
-        this.boardContainer.lx = 0;
-        this.boardContainer.ly = 0;
+
+        const targetUnderlayDrawHeight = availH * UNDERLAY_RATIO;
+        const boardBottomPadding = Config.BOARD_BOTTOM_PADDING || 40;
+
+        // смещаем игровое поле вверх от нижнего края на boardBottomPadding
+        const yOffset = -((gridH + 15) / 2 * boardScale + boardBottomPadding);
+        this.boardContainer.py = yOffset;
+        this.boardContainer.ly = yOffset;
         this.boardContainer.pScaleX = boardScale;
         this.boardContainer.pScaleY = boardScale;
         this.boardContainer.lScaleX = boardScale;
         this.boardContainer.lScaleY = boardScale;
+        this.boardContainer.lx = 0;
+        this.boardContainer.ly = yOffset;
 
-
-        // Underlay behind the board (full screen width, height matches board_bg)
-        const underlayWidth = availW / boardScale;
-        const underlayHeight = gridH + 20;
-        this.boardUnderlay = this.add.graphics({ x: 0, y: 0 });
-        this.boardUnderlay.fillStyle(0x9eb982, 1);
-        this.boardUnderlay.fillRect(-underlayWidth / 2, -underlayHeight / 2, underlayWidth, underlayHeight);
+        // green underlay is kept in boardContainer so it can reach the top of the board
+        this.boardUnderlay = this.add.graphics();
         this.boardUnderlay.setDepth(-3);
         this.boardContainer.add(this.boardUnderlay);
 
-        // Board background (behind cells)
         this.boardBg = this.add.image(0, 0, 'board_bg')
             .setDisplaySize(gridW + 22, gridH + 15)
             .setDepth(-2);
         this.boardContainer.add(this.boardBg);
 
-        // Table (behind the board but above the board background)
+        const boardTopY = -(gridH + 15) / 2;
+        const boardBottomY = (gridH + 15) / 2;
+        const underlayHeightLocal = (gridH + 15) + 80; // extra coverage under board
+        this.boardUnderlay.clear();
+        this.boardUnderlay.fillStyle(0x9eb982, 1);
+        this.boardUnderlay.fillRect(-availW / 2 / boardScale, boardTopY, availW / boardScale, underlayHeightLocal); // width in local units, to cover full width after board scale
+
         const tableTex = this.textures.get('table');
         const tableImage = this.add.image(0, 10, 'table');
         const topOfBoard = -((gridH) / 2);
@@ -95,13 +99,12 @@ export default class Game extends ParentScene {
             const tableH = source && source.height ? source.height : 200;
             tableImage.setDisplaySize(tableW, tableH);
 
-            // Position table above the board: table's bottom aligns with board top
             tableImage.setPosition(0, topOfBoard - tableH / 2);
 
             this.tableHeight = tableH;
             this.tableTopY = topOfBoard - tableH - 10;
         } else {
-            // Fallback: stretch to full width of the board container
+
             const tableH = 200;
             tableImage.setDisplaySize(gridW + 20, tableH);
             tableImage.setPosition(0, topOfBoard - tableH / 2);
@@ -123,16 +126,18 @@ export default class Game extends ParentScene {
         this.customerContainer.setDepth(0);
 
         const availH = this.game.size.bottom - this.game.size.top;
-        const customerHeight = availH * 0.2;
+        const customerHeightRatio = Config.CUSTOMER_HEIGHT_RATIO;
+        const customerHeight = availH * customerHeightRatio;
+        const customerScale = customerHeight / Config.CUSTOMER_BASE_HEIGHT;
 
         this.customerContainer.px = 0;
         this.customerContainer.py = customerHeight / 2;
         this.customerContainer.lx = 0;
         this.customerContainer.ly = customerHeight / 2;
-        this.customerContainer.pScaleX = 1;
-        this.customerContainer.pScaleY = 1;
-        this.customerContainer.lScaleX = 0.8;
-        this.customerContainer.lScaleY = 0.8;
+        this.customerContainer.pScaleX = customerScale;
+        this.customerContainer.pScaleY = customerScale;
+        this.customerContainer.lScaleX = customerScale;
+        this.customerContainer.lScaleY = customerScale;
         this.mainContainer.add(this.customerContainer);
     }
 
@@ -158,23 +163,21 @@ export default class Game extends ParentScene {
         this.mainContainer.add(this.ctaButton);
     }
 
-    /* ---- Systems wiring ---- */
+    
 
     initSystems() {
-        // Grid
+
         this.gridSystem = new GridSystem(this, this.boardContainer);
         this.gridSystem.init();
-        // Merge
+
         this.mergeSystem = new MergeSystem(this, this.gridSystem, this.boardContainer);
         this.mergeSystem.onMergeSuccess = () => {
             this.customerSystem.checkOrder(this.gridSystem);
         };
 
-        // Helper (customer hints)
         this.helperSystem = new HelperSystem(this, this.gridSystem, this.boardContainer, this.globalState);
         this.helperSystem.init();
 
-        // Input
         this.inputSystem = new InputSystem(this, this.gridSystem, this.boardContainer, this.globalState);
         this.inputSystem.onMergeAttempt = (dragItem, targetCell) => {
             return this.mergeSystem.tryMerge(dragItem, targetCell);
@@ -184,12 +187,10 @@ export default class Game extends ParentScene {
         };
         this.inputSystem.init();
 
-        // Customer
         this.customerSystem = new CustomerSystem(this, this.customerContainer, this.boardContainer, this.tableTopY, this.tableHeight);
         this.customerSystem.gridSystem = this.gridSystem;
         this.customerSystem.globalState = this.globalState;
 
-        // HUD / Economy
         this.uiManager = new UIManager(this, this.globalState);
         this.uiManager.init();
 
@@ -208,7 +209,7 @@ export default class Game extends ParentScene {
         this.customerSystem.onOrderStatusChanged = (isSatisfied, button) => {
             if (isSatisfied) {
                 this.helperSystem.pointToGiveButton(button);
-            } else {
+            } else if (!this.helperSystem.onlyPointToGiveButton) {
                 const req = this.customerSystem.getMissingRequirement(this.gridSystem);
                 if (req && (this.helperSystem.customerTargetType !== req.productType || 
                             this.helperSystem.customerTargetLevel !== req.targetLevel || 
@@ -224,7 +225,7 @@ export default class Game extends ParentScene {
         this.customerSystem.checkOrder(this.gridSystem);
     }
 
-    /* ---- CTA ---- */
+    
 
     showCTA() {
         if (this.ctaShown) return;
@@ -237,7 +238,7 @@ export default class Game extends ParentScene {
         });
     }
 
-    /* ---- Resize ---- */
+    
 
     handleResize() {
         if (this._inResize) return;
@@ -266,8 +267,10 @@ export default class Game extends ParentScene {
             const gridH = Config.ROWS * Config.CELL_SIZE;
             const availW = this.game.size.right - this.game.size.left;
             const availH = this.game.size.bottom - this.game.size.top;
-            const maxBoardH = availH * 0.8;
-            const scaleW = availW / gridW;
+            const usableW = availW * 0.95;
+            const UNDERLAY_RATIO = Config.UNDERLAY_RATIO;
+            const maxBoardH = availH * UNDERLAY_RATIO;
+            const scaleW = usableW / gridW;
             const scaleH = maxBoardH / gridH;
             const boardScale = Math.min(scaleW, scaleH);
 
@@ -276,25 +279,29 @@ export default class Game extends ParentScene {
             this.boardContainer.lScaleX = boardScale;
             this.boardContainer.lScaleY = boardScale;
 
-            const yOffset = -((gridH + 20) * boardScale) / 2;
+            const targetUnderlayDrawHeight = availH * UNDERLAY_RATIO;
+            const boardBottomPadding = Config.BOARD_BOTTOM_PADDING || 40;
+            const yOffset = -((gridH + 15) / 2 * boardScale + boardBottomPadding);
             this.boardContainer.py = yOffset;
             this.boardContainer.ly = yOffset;
-            // Resize underlay + table to new width (keep table height original texture height)
-            const underlayWidth = availW / boardScale;
-            const underlayHeight = gridH + 20;
+            const underlayHeight = targetUnderlayDrawHeight + boardBottomPadding;
             if (this.boardUnderlay) {
                 this.boardUnderlay.clear();
                 this.boardUnderlay.fillStyle(0x9eb982, 1);
-                this.boardUnderlay.fillRect(-underlayWidth / 2, -underlayHeight / 2, underlayWidth, underlayHeight);
+
+                const boardTopY = -(gridH + 15) / 2;
+                const underlayHeightLocal = (gridH + 15) + 80;
+                this.boardUnderlay.fillRect(-availW / 2 / boardScale, boardTopY, availW / boardScale, underlayHeightLocal);
             }
 
+            const underlayWidth = availW / boardScale;
             if (this.tableImage) {
                 const tableTex = this.textures.get('table');
                 const tableH = tableTex && tableTex.getSourceImage ? tableTex.getSourceImage().height : this.tableHeight || 200;
                 this.tableImage.setDisplaySize(underlayWidth, tableH);
 
                 const topOfBoard = -((gridH + 20) / 2);
-                this.tableImage.setPosition(0, topOfBoard - tableH / 2);
+                this.tableImage.setPosition(0, (topOfBoard - tableH / 2) + 3);
 
                 this.tableHeight = tableH;
                 this.tableTopY = topOfBoard - tableH;
@@ -302,9 +309,16 @@ export default class Game extends ParentScene {
 
         if (this.customerContainer) {
             const availH = this.game.size.bottom - this.game.size.top;
-            const customerHeight = availH * 0.2;
+            const customerHeightRatio = Config.CUSTOMER_HEIGHT_RATIO;
+            const customerHeight = availH * customerHeightRatio;
+            const customerScale = customerHeight / Config.CUSTOMER_BASE_HEIGHT;
+
             this.customerContainer.py = customerHeight / 2;
             this.customerContainer.ly = customerHeight / 2;
+            this.customerContainer.pScaleX = customerScale;
+            this.customerContainer.pScaleY = customerScale;
+            this.customerContainer.lScaleX = customerScale;
+            this.customerContainer.lScaleY = customerScale;
         }
 
         this._resizeFromSelf = true;
@@ -312,5 +326,12 @@ export default class Game extends ParentScene {
         this._resizeFromSelf = false;
         this._inResize = false;
     }
+
+    update(time, delta) {
+        if (this.customerSystem && this.customerSystem.update) {
+            this.customerSystem.update(time, delta);
+        }
+    }
 }
+
 
