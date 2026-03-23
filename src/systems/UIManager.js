@@ -12,10 +12,10 @@ export default class UIManager {
 
         this.coinContainer = this.scene.add.container(0, 0);
         this.coinContainer.addProperties(['pos', 'scale']);
-        this.coinContainer.setCustomPosition(-50, 40).setAlign('Top Rigth');
-        this.coinContainer.setDepth(1000);
+        this.coinContainer.setCustomPosition(-80, 40).setAlign('Top Rigth'); // смещаем левее
+        this.coinContainer.setDepth(9999);
 
-        this.coinContainer.px = -52;
+        this.coinContainer.px = -82;
         this.coinContainer.py = 40;
         this.coinContainer.lx = -52;
         this.coinContainer.ly = 40;
@@ -24,16 +24,12 @@ export default class UIManager {
         this.coinContainer.lScaleX = 1;
         this.coinContainer.lScaleY = 1;
 
+        this.coinIcon = this.scene.add.image(-26, 3, 'gold_1');
+        this.coinIcon.setScale(40 / Math.max(1, this.coinIcon.width));
 
-
-
-
-
-        this.coinIcon = this.scene.add.image(-26, 3, 'gold_1').setDisplaySize(30, 30);
-
-        this.coinText = this.scene.add.text(0, -12, '0', {
+        this.coinText = this.scene.add.text(0, -14, '0', {
             fontFamily: 'Arial',
-            fontSize: '22px',
+            fontSize: '28px',
             color: '#ffffff',
             stroke: '#000000',
             strokeThickness: 3
@@ -41,6 +37,7 @@ export default class UIManager {
 
         this.coinContainer.add([this.coinIcon, this.coinText]);
         this.scene.mainContainer.add(this.coinContainer);
+        this.scene.mainContainer.setDepth(9999);
 
         this.baseScales = {
             iconX: this.coinIcon.scaleX,
