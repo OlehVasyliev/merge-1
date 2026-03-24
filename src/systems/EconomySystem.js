@@ -73,16 +73,16 @@ export default class EconomySystem {
                         {
                             x: midX,
                             y: midY,
-                            scaleX: 0.2,
-                            scaleY: 0.2,
+                            scaleX: 2.8,
+                            scaleY: 2.8,
                             alpha: 1,
                             duration: 400
                         },
                         {
                             x: targetX,
                             y: targetY,
-                            scaleX: 0.1,
-                            scaleY: 0.1,
+                            scaleX: 0.8,
+                            scaleY: 0.8,
                             alpha: 0,
                             duration: 500
                         }
