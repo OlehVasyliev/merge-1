@@ -299,19 +299,22 @@ export default class CustomerSystem {
 
         this.giveButton.setAlpha(0.4);
 
-        const targetX = this.scene.game.size.x + this.customerOffsetX;
-        const startX = this.scene.game.size.right + 150 + this.customerOffsetX;
-        this.container.x = startX;
+        this._slideOffsetX = 500;
+        const slideProxy = { value: 500 };
 
         this.scene.tweens.add({
-            targets: this.container,
-            x: targetX,
+            targets: slideProxy,
+            value: 0,
             duration: 450,
             ease: 'Back.easeOut',
             onStart: () => {
                 Utils.addAudio(this.scene, 'customer_new', 1.2);
             },
+            onUpdate: () => {
+                this._slideOffsetX = slideProxy.value;
+            },
             onComplete: () => {
+                this._slideOffsetX = 0;
                 this.orderSprites.forEach((icon, idx) => {
                     this.scene.tweens.add({
                         targets: icon,
@@ -395,7 +398,8 @@ export default class CustomerSystem {
                 const portraitLocalX = (cloudWorldX - this.container.x) / this.container.scaleX;
                 const portraitLocalY = (cloudWorldY - this.container.y) / this.container.scaleY;
 
-                this.portraitSprite.x = portraitLocalX + 20;
+                const offsetX = this._slideOffsetX || 0;
+                this.portraitSprite.x = portraitLocalX + 20 + offsetX;
                 this.portraitSprite.y = portraitLocalY - 40;
             }
         }
