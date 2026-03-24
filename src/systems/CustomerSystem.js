@@ -306,8 +306,8 @@ export default class CustomerSystem {
         this.scene.tweens.add({
             targets: this.container,
             x: targetX,
-            duration: 450,
-            ease: 'Back.easeOut',
+            duration: 600,
+            ease: 'Bounce.easeOut',
             onStart: () => {
                 Utils.addAudio(this.scene, 'customer_new', 1.2);
             },
