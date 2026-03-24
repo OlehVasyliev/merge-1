@@ -300,16 +300,21 @@ export default class CustomerSystem {
         this.giveButton.setAlpha(0.4);
 
         this._slideOffsetX = 500;
+        const slideProxy = { value: 500 };
 
         this.scene.tweens.add({
-            targets: this,
-            _slideOffsetX: 0,
+            targets: slideProxy,
+            value: 0,
             duration: 450,
             ease: 'Back.easeOut',
             onStart: () => {
                 Utils.addAudio(this.scene, 'customer_new', 1.2);
             },
+            onUpdate: () => {
+                this._slideOffsetX = slideProxy.value;
+            },
             onComplete: () => {
+                this._slideOffsetX = 0;
                 this.orderSprites.forEach((icon, idx) => {
                     this.scene.tweens.add({
                         targets: icon,
