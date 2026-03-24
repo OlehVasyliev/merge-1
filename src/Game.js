@@ -72,14 +72,22 @@ export default class Game extends ParentScene {
         this.boardContainer.lx = 0;
         this.boardContainer.ly = yOffset;
 
-        // green underlay is kept separate (scene root) so it can fill the screen independently
+        // green underlay is kept in boardContainer so it can reach the top of the board
         this.boardUnderlay = this.add.graphics();
         this.boardUnderlay.setDepth(-3);
+        this.boardContainer.add(this.boardUnderlay);
 
         this.boardBg = this.add.image(0, 0, 'board_bg')
             .setDisplaySize(gridW + 22, gridH + 15)
             .setDepth(-2);
         this.boardContainer.add(this.boardBg);
+
+        const boardTopY = -(gridH + 15) / 2;
+        const boardBottomY = (gridH + 15) / 2;
+        const underlayHeightLocal = (gridH + 15) + 80; // extra coverage under board
+        this.boardUnderlay.clear();
+        this.boardUnderlay.fillStyle(0x9eb982, 1);
+        this.boardUnderlay.fillRect(-availW / 2 / boardScale, boardTopY, availW / boardScale, underlayHeightLocal); // width in local units, to cover full width after board scale
 
         const tableTex = this.textures.get('table');
         const tableImage = this.add.image(0, 10, 'table');
@@ -281,12 +289,9 @@ export default class Game extends ParentScene {
                 this.boardUnderlay.clear();
                 this.boardUnderlay.fillStyle(0x9eb982, 1);
 
-                const boardBounds = this.boardContainer.getBounds();
-                const boardTopY = boardBounds.top;
-                const screenBottomY = this.game.size.bottom;
-                const drawHeight = Math.max(screenBottomY - boardTopY, underlayHeight);
-
-                this.boardUnderlay.fillRect(this.game.size.left, boardTopY, availW, drawHeight);
+                const boardTopY = -(gridH + 15) / 2;
+                const underlayHeightLocal = (gridH + 15) + 80;
+                this.boardUnderlay.fillRect(-availW / 2 / boardScale, boardTopY, availW / boardScale, underlayHeightLocal);
             }
 
             const underlayWidth = availW / boardScale;
