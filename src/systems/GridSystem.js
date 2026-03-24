@@ -110,6 +110,7 @@ export default class GridSystem {
         item.originCol = col;
         item.originRow = row;
         item.sprite.setPosition(this.cellToX(col), this.cellToY(row));
+        if (item.checkSprite) this.updateItemCheckPosition(item);
         item.sprite.setDepth(1);
     }
 
@@ -118,7 +119,43 @@ export default class GridSystem {
         if (cell && cell.item === item) cell.item = null;
         const idx = this.items.indexOf(item);
         if (idx !== -1) this.items.splice(idx, 1);
+        if (item.checkSprite) {
+            item.checkSprite.destroy();
+            item.checkSprite = null;
+        }
         if (item.sprite) item.sprite.destroy();
+    }
+
+    setItemLocked(item, locked) {
+        if (!item) return;
+        item.isLocked = locked;
+
+        if (locked) {
+            if (!item.checkSprite) {
+                item.checkSprite = this.scene.add.text(0, 0, '✓', {
+                    fontFamily: 'Arial',
+                    fontSize: `${Config.CELL_SIZE / 2}px`,
+                    color: '#00ff00',
+                    stroke: '#000000',
+                    strokeThickness: 3
+                }).setDepth(2);
+                this.boardContainer.add(item.checkSprite);
+            }
+            this.updateItemCheckPosition(item);
+        } else if (item.checkSprite) {
+            item.checkSprite.destroy();
+            item.checkSprite = null;
+        }
+    }
+
+    updateItemCheckPosition(item) {
+        if (!item || !item.checkSprite || !item.sprite) return;
+        const offset = Config.CELL_SIZE * 0.18;
+        item.checkSprite.setPosition(item.sprite.x + offset, item.sprite.y + offset);
+    }
+
+    clearAllLocks() {
+        this.items.forEach(item => this.setItemLocked(item, false));
     }
 
     

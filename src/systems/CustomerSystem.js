@@ -331,6 +331,10 @@ export default class CustomerSystem {
 
     
     checkOrder(gridSystem) {
+        if (!gridSystem) return;
+
+        if (gridSystem.clearAllLocks) gridSystem.clearAllLocks();
+
         if (!this.orderRequirements.length) {
             this.isSatisfied = false;
             this.giveButton.setAlpha(0.4);
@@ -338,36 +342,49 @@ export default class CustomerSystem {
             return;
         }
 
-        const matched = [];
+        const matchedItems = [];
         for (const req of this.orderRequirements) {
             const item = gridSystem.items.find(i =>
-                i.type === req.productType && i.level === req.targetLevel && !matched.includes(i)
+                i.type === req.productType && i.level === req.targetLevel && !matchedItems.includes(i)
             );
-            if (!item) {
-                this.orderRequirements.forEach(r => (r.isSatisfied = false));
-                this.isSatisfied = false;
-                this.giveButton.setAlpha(0.4);
-                if (this.onOrderStatusChanged) this.onOrderStatusChanged(false, this.giveButton);
-                return;
+            if (item) {
+                matchedItems.push(item);
             }
-            matched.push(item);
         }
 
-        this.orderRequirements.forEach((r, idx) => (r.isSatisfied = idx < matched.length));
-        this.isSatisfied = true;
-        this.giveButton.setAlpha(1);
-        if (this.onOrderStatusChanged) this.onOrderStatusChanged(true, this.giveButton);
+        this.orderRequirements.forEach((req, idx) => {
+            req.isSatisfied = !!matchedItems[idx];
+        });
+
+        matchedItems.forEach(item => {
+            if (gridSystem.setItemLocked) gridSystem.setItemLocked(item, true);
+        });
+
+        this.isSatisfied = matchedItems.length === this.orderRequirements.length;
+        this.giveButton.setAlpha(this.isSatisfied ? 1 : 0.4);
+
+        if (this.onOrderStatusChanged) this.onOrderStatusChanged(this.isSatisfied, this.giveButton);
     }
 
     onGiveClicked() {
         if (!this.isSatisfied) return;
-        
+
+        // очищаем визуальные блокировки сразу при сдаче заказа
+        if (this.gridSystem && this.gridSystem.clearAllLocks) {
+            this.gridSystem.clearAllLocks();
+        }
+
         Utils.addAudio(this.scene, 'order_give', 0.6);
-        
+
         if (this.onOrderFulfilled) this.onOrderFulfilled();
     }
 
     fulfillOrder() {
+        // на всякий случай сбрасываем отметки при фактической обработке заказа
+        if (this.gridSystem && this.gridSystem.clearAllLocks) {
+            this.gridSystem.clearAllLocks();
+        }
+
         this.giveButton.setAlpha(0.4);
         this.scene.tweens.add({
             targets: [this.portraitSprite, this.rewardGroup, ...this.orderSprites],

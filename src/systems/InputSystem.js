@@ -51,6 +51,11 @@ export default class InputSystem {
         if (!cell || !cell.item) return;
 
         const item = cell.item;
+        if (item.isLocked) {
+            Utils.addAudio(this.scene, 'merge_fail', 0.3);
+            return;
+        }
+
         this.dragItem = item;
         item.isDragging = true;
         item.originCol = item.col;

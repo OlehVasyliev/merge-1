@@ -11,10 +11,12 @@ export function createItemEntity(col, row, type, level) {
         level,      // 1..4
 
         isDragging: false,
+        isLocked: false,
         originCol: col,
         originRow: row,
 
-        sprite: null
+        sprite: null,
+        checkSprite: null
     };
 }
 
