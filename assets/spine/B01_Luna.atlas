@@ -1,0 +1,167 @@
+
+B01_Luna.png
+size: 2022,261
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+B01_Luna/arm_L1
+  rotate: false
+  xy: 1373, 2
+  size: 131, 101
+  orig: 135, 107
+  offset: 3, 3
+  index: -1
+B01_Luna/arm_L2
+  rotate: true
+  xy: 1785, 121
+  size: 138, 110
+  orig: 138, 110
+  offset: 0, 0
+  index: -1
+B01_Luna/arm_R1
+  rotate: false
+  xy: 1897, 138
+  size: 123, 121
+  orig: 123, 121
+  offset: 0, 0
+  index: -1
+B01_Luna/arm_R2
+  rotate: false
+  xy: 972, 6
+  size: 107, 92
+  orig: 107, 92
+  offset: 0, 0
+  index: -1
+B01_Luna/bicep_L1
+  rotate: true
+  xy: 1506, 3
+  size: 104, 134
+  orig: 104, 134
+  offset: 0, 0
+  index: -1
+B01_Luna/bicep_L2
+  rotate: true
+  xy: 831, 6
+  size: 87, 139
+  orig: 87, 139
+  offset: 0, 0
+  index: -1
+B01_Luna/bicep_R1
+  rotate: true
+  xy: 1237, 4
+  size: 97, 134
+  orig: 103, 134
+  offset: 0, 0
+  index: -1
+B01_Luna/bicep_R2
+  rotate: true
+  xy: 1765, 9
+  size: 101, 113
+  orig: 101, 113
+  offset: 0, 0
+  index: -1
+B01_Luna/body
+  rotate: true
+  xy: 2, 2
+  size: 257, 379
+  orig: 263, 379
+  offset: 3, 0
+  index: -1
+B01_Luna/ear_L1
+  rotate: false
+  xy: 831, 95
+  size: 133, 164
+  orig: 133, 164
+  offset: 0, 0
+  index: -1
+B01_Luna/ear_L2
+  rotate: true
+  xy: 966, 100
+  size: 159, 119
+  orig: 159, 119
+  offset: 0, 0
+  index: -1
+B01_Luna/ear_R1
+  rotate: false
+  xy: 1880, 4
+  size: 100, 115
+  orig: 100, 115
+  offset: 0, 0
+  index: -1
+B01_Luna/ear_R2
+  rotate: false
+  xy: 1642, 4
+  size: 121, 106
+  orig: 121, 106
+  offset: 0, 0
+  index: -1
+B01_Luna/emo_1
+  rotate: true
+  xy: 1668, 112
+  size: 147, 115
+  orig: 173, 122
+  offset: 8, 6
+  index: -1
+B01_Luna/emo_2
+  rotate: false
+  xy: 1081, 20
+  size: 154, 78
+  orig: 173, 122
+  offset: 2, 6
+  index: -1
+B01_Luna/emo_3
+  rotate: true
+  xy: 1423, 109
+  size: 150, 105
+  orig: 152, 106
+  offset: 1, 1
+  index: -1
+B01_Luna/emo_4
+  rotate: true
+  xy: 1193, 103
+  size: 156, 113
+  orig: 156, 113
+  offset: 0, 0
+  index: -1
+B01_Luna/emo_5
+  rotate: true
+  xy: 1530, 112
+  size: 147, 136
+  orig: 147, 138
+  offset: 0, 1
+  index: -1
+B01_Luna/emo_6
+  rotate: true
+  xy: 1308, 105
+  size: 154, 113
+  orig: 157, 122
+  offset: 2, 9
+  index: -1
+B01_Luna/emo_7
+  rotate: true
+  xy: 1087, 100
+  size: 159, 104
+  orig: 159, 105
+  offset: 0, 0
+  index: -1
+B01_Luna/head
+  rotate: false
+  xy: 383, 37
+  size: 263, 222
+  orig: 275, 278
+  offset: 9, 3
+  index: -1
+B01_Luna/sigh
+  rotate: false
+  xy: 648, 29
+  size: 84, 44
+  orig: 86, 46
+  offset: 0, 0
+  index: -1
+B01_Luna/tail
+  rotate: false
+  xy: 648, 75
+  size: 181, 184
+  orig: 181, 184
+  offset: 0, 0
+  index: -1

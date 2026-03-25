@@ -5,7 +5,10 @@ export default class Preloader extends Phaser.Scene {
 
     preload() {
         for (var key in window.App.resources.spine) {
+            // SpinePlugin ищет текстуру по имени из .atlas файла (например "B01_Luna.png")
+            // Регистрируем и с расширением и без для совместимости
             this.textures.addBase64(key + '.png', window.App.resources.spine[key].png);
+            this.textures.addBase64(key, window.App.resources.spine[key].png);
         }
     }
   
@@ -82,27 +85,47 @@ export default class Preloader extends Phaser.Scene {
             }, 1000)
         }
 
-        this.time.addEvent({delay: 250, callback: () => {
-            for (var key in App.resources.spine) {
-                let image = new Image();
-                image.src = window.App.resources.spine[key].png;
-                image.onload = () => {
-                    //console.log(this);
-                    //console.log(this.spine.plugin.webgl.GLTexture( this.game.context, image, false ));
+        // Ждём загрузки spine текстур перед вызовом getAtlas
+        const waitForSpineTextures = () => {
+            const spineKeys = Object.keys(App.resources.spine);
+            let allReady = true;
+            let notReadyKey = null;
+            
+            for (const key of spineKeys) {
+                const textureKey = key + '.png';
+                if (!this.textures.exists(textureKey)) {
+                    allReady = false;
+                    notReadyKey = textureKey + ' (not exists)';
+                    break;
                 }
-
-                this.cache.custom.spine.add(key, {preMultipliedAlpha: true, data: window.App.resources.spine[key].atlas} );
-                //console.log(this.game.context, window.App.resources.spine[key].png);
-                //console.log(this.spine.plugin.webgl.GLTexture( this.game.context, window.App.resources.spine[key].png ));
-                this.cache.custom.spineTextures.add(key, this.spine.getAtlas(key));
-                //console.log(this.spine.spineTextures.get(key));
-                this.cache.json.add(key, window.App.resources.spine[key].json);
-                
-                this.loaded++;
+                const tex = this.textures.get(textureKey);
+                const source = tex.getSourceImage();
+                if (!source || !source.complete || source.naturalWidth === 0) {
+                    allReady = false;
+                    notReadyKey = textureKey + ' (not complete: ' + (source ? source.complete + '/' + source.naturalWidth : 'no source') + ')';
+                    break;
+                }
             }
-
-            this.startGame();
-        }, callbackScope: this});
+            
+            console.log('waitForSpineTextures:', allReady, notReadyKey);
+            
+            if (allReady) {
+                // Все текстуры загружены - создаём атласы
+                for (var key in App.resources.spine) {
+                    // prefix: '' - чтобы SpinePlugin искал текстуру по точному имени "B01_Luna.png"
+                    this.cache.custom.spine.add(key, {preMultipliedAlpha: false, prefix: '', data: window.App.resources.spine[key].atlas});
+                    this.cache.custom.spineTextures.add(key, this.spine.getAtlas(key));
+                    this.cache.json.add(key, window.App.resources.spine[key].json);
+                    this.loaded++;
+                }
+                this.startGame();
+            } else {
+                // Ещё не все готовы - проверяем снова через 50мс
+                this.time.addEvent({delay: 50, callback: waitForSpineTextures, callbackScope: this});
+            }
+        };
+        
+        this.time.addEvent({delay: 100, callback: waitForSpineTextures, callbackScope: this});
 
         this.startGame();
     }

@@ -1,7 +1,7 @@
 module.exports = {
     'name': 'MergeGame',
     'networks': ['Applovin', 'Facebook', 'Google', 'IronSource', 'Liftoff', 'TikTok', 'UnityAds', 'Vungle'],
-    'customPhaser': true,
+    'customPhaser': false,
     'compressAtlas': true,
     'compressTexture': true,
     'compressAudio': true,

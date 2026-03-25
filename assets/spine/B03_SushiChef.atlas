@@ -1,0 +1,174 @@
+
+B03_SushiChef.png
+size: 422,1043
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+B03_SushiChef/arm_L1
+  rotate: false
+  xy: 115, 311
+  size: 81, 128
+  orig: 82, 128
+  offset: 0, 0
+  index: -1
+B03_SushiChef/arm_L2
+  rotate: true
+  xy: 2, 85
+  size: 135, 110
+  orig: 136, 110
+  offset: 0, 0
+  index: -1
+B03_SushiChef/arm_R1
+  rotate: true
+  xy: 282, 172
+  size: 90, 129
+  orig: 90, 130
+  offset: 0, 0
+  index: -1
+B03_SushiChef/arm_R2
+  rotate: false
+  xy: 140, 50
+  size: 107, 92
+  orig: 107, 92
+  offset: 0, 0
+  index: -1
+B03_SushiChef/bicep_L1
+  rotate: true
+  xy: 249, 7
+  size: 69, 151
+  orig: 70, 151
+  offset: 0, 0
+  index: -1
+B03_SushiChef/bicep_L2
+  rotate: true
+  xy: 249, 7
+  size: 69, 151
+  orig: 70, 151
+  offset: 0, 0
+  index: -1
+B03_SushiChef/bicep_R1
+  rotate: false
+  xy: 115, 154
+  size: 70, 155
+  orig: 70, 155
+  offset: 0, 0
+  index: -1
+B03_SushiChef/bicep_R2
+  rotate: false
+  xy: 198, 536
+  size: 124, 125
+  orig: 124, 125
+  offset: 0, 0
+  index: -1
+B03_SushiChef/body
+  rotate: false
+  xy: 2, 604
+  size: 188, 437
+  orig: 188, 437
+  offset: 0, 0
+  index: -1
+B03_SushiChef/ear_L
+  rotate: false
+  xy: 91, 441
+  size: 105, 161
+  orig: 105, 161
+  offset: 0, 0
+  index: -1
+B03_SushiChef/ear_L2
+  rotate: true
+  xy: 198, 413
+  size: 121, 124
+  orig: 121, 124
+  offset: 0, 0
+  index: -1
+B03_SushiChef/ear_R
+  rotate: false
+  xy: 320, 264
+  size: 96, 118
+  orig: 96, 118
+  offset: 0, 0
+  index: -1
+B03_SushiChef/ear_R2
+  rotate: false
+  xy: 282, 78
+  size: 111, 92
+  orig: 111, 92
+  offset: 0, 0
+  index: -1
+B03_SushiChef/emo_1
+  rotate: true
+  xy: 330, 658
+  size: 136, 83
+  orig: 137, 84
+  offset: 0, 0
+  index: -1
+B03_SushiChef/emo_2
+  rotate: true
+  xy: 2, 222
+  size: 138, 111
+  orig: 139, 111
+  offset: 1, 0
+  index: -1
+B03_SushiChef/emo_3
+  rotate: false
+  xy: 2, 2
+  size: 136, 81
+  orig: 137, 84
+  offset: 0, 0
+  index: -1
+B03_SushiChef/emo_4
+  rotate: true
+  xy: 324, 384
+  size: 134, 96
+  orig: 156, 113
+  offset: 6, 0
+  index: -1
+B03_SushiChef/emo_5
+  rotate: false
+  xy: 192, 663
+  size: 136, 131
+  orig: 155, 144
+  offset: 6, 4
+  index: -1
+B03_SushiChef/emo_6
+  rotate: true
+  xy: 324, 520
+  size: 136, 95
+  orig: 157, 122
+  offset: 6, 22
+  index: -1
+B03_SushiChef/emo_7
+  rotate: true
+  xy: 187, 144
+  size: 136, 93
+  orig: 159, 105
+  offset: 9, 5
+  index: -1
+B03_SushiChef/head
+  rotate: true
+  xy: 192, 796
+  size: 245, 209
+  orig: 246, 209
+  offset: 0, 0
+  index: -1
+B03_SushiChef/headwear_f
+  rotate: true
+  xy: 2, 362
+  size: 240, 87
+  orig: 241, 88
+  offset: 1, 1
+  index: -1
+B03_SushiChef/sigh
+  rotate: false
+  xy: 140, 4
+  size: 84, 44
+  orig: 86, 46
+  offset: 0, 0
+  index: -1
+B03_SushiChef/tail
+  rotate: true
+  xy: 198, 282
+  size: 129, 120
+  orig: 129, 120
+  offset: 0, 0
+  index: -1

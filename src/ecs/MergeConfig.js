@@ -11,6 +11,7 @@ export default {
     MAX_LEVEL: 4,
 
     CUSTOMER_COUNT: 3,
+    CUSTOMER_SPINE_KEYS: ['B01_Luna', 'B02_Fisherman', 'B03_SushiChef'],
 
     ORDER_MIN_LEVEL: 2,
     ORDER_MAX_LEVEL: 3,

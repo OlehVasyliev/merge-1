@@ -32,17 +32,62 @@ export default class CustomerSystem {
 
         this.gridSystem = null;
         this.globalState = null;
+
+        this.waitingTime = 0;
+        this.waitStage = 0; // 0=idle,1=worried,2=angry,3=sigh
+    }
+
+    createSpine(x, y, key, animName, loop) {
+        const plugin = this.scene.spine;
+
+        const go = new window.SpinePlugin.SpineGameObject(this.scene, plugin, x, y, key, animName, loop);
+        this.scene.add.existing(go);
+
+        if (this.scene.sys.updateList) {
+            this.scene.sys.updateList.add(go);
+        }
+        
+        // ВАЖНО: применяем скин персонажа, а не default
+        if (go.skeleton && go.skeleton.data) {
+            let characterSkin = go.skeleton.data.findSkin(key);
+            if (!characterSkin) {
+                // Поддержка B03_SushiChef / B03_Sushi Chef
+                const altKey = key === 'B03_SushiChef' ? 'B03_Sushi Chef' : 
+                               key === 'B03_Sushi Chef' ? 'B03_SushiChef' : null;
+                if (altKey) {
+                    characterSkin = go.skeleton.data.findSkin(altKey);
+                }
+            }
+            if (!characterSkin) {
+                characterSkin = go.skeleton.data.findSkin('default');
+            }
+            if (characterSkin) {
+                go.skeleton.setSkin(characterSkin);
+                go.skeleton.setSlotsToSetupPose();
+            }
+        }
+        
+        if (typeof go.setAnimation === 'function') {
+            go.setAnimation(0, animName, loop);
+        }
+        
+        window.__debugSpine = go;
+        return go;
+    }
+
+    getSpineKey(portraitId) {
+        const keys = Config.CUSTOMER_SPINE_KEYS;
+        const idx = (portraitId - 1) % keys.length;
+        return keys[idx];
     }
 
     init() {
 
         this.container.x = this.scene.game.size.right + 150 + this.customerOffsetX;
 
-        this.createCustomerAnimations();
-
-        const initial = this.getCustomerInitialFrame(1);
-        this.portraitSprite = this.scene.add.sprite(-130, 20, initial.textureKey, initial.frame)
-            .setScale(1.5)
+        const firstKey = Config.CUSTOMER_SPINE_KEYS[0];
+        this.portraitSprite = this.createSpine(-130, 20, firstKey, 'idle', true)
+            .setScale(0.25)
             .setDepth(5);
         this.container.add(this.portraitSprite);
 
@@ -86,83 +131,19 @@ export default class CustomerSystem {
         this.generateNewCustomer();
     }
 
-    getCustomerAtlasKey(type) {
-        return `customer_${type}`;
-    }
 
-    getCustomerFrameNames(type) {
-        const atlasKey = this.getCustomerAtlasKey(type);
-        if (this.scene.textures.exists(atlasKey)) {
-            const atlas = this.scene.textures.get(atlasKey);
-            const frameNames = atlas && typeof atlas.getFrameNames === 'function'
-                ? atlas.getFrameNames().filter(name => name.startsWith(`customer_${type}_`))
-                : atlas && atlas.frames
-                    ? Object.keys(atlas.frames).filter(name => name.startsWith(`customer_${type}_`))
-                    : [];
-
-            return frameNames.sort((a, b) => {
-                const aNum = parseInt(a.split('_').pop(), 10);
-                const bNum = parseInt(b.split('_').pop(), 10);
-                return aNum - bNum;
-            });
-        }
-
-        return Object.keys(this.scene.textures.list)
-            .filter(key => key.startsWith(`customer_${type}_`))
-            .sort((a, b) => {
-                const aNum = parseInt(a.split('_').pop(), 10);
-                const bNum = parseInt(b.split('_').pop(), 10);
-                return aNum - bNum;
-            });
-    }
-
-    getCustomerInitialFrame(type) {
-        const frameNames = this.getCustomerFrameNames(type);
-        const atlasKey = this.getCustomerAtlasKey(type);
-
-        if (atlasKey && this.scene.textures.exists(atlasKey) && frameNames.length) {
-            return { textureKey: atlasKey, frame: frameNames[0] };
-        }
-
-        if (frameNames.length) {
-            return { textureKey: frameNames[0], frame: null };
-        }
-
-        return { textureKey: atlasKey, frame: null };
-    }
-
-    getCustomerAnimKey(type) {
-        return `customer_${type}_idle`;
-    }
-
-    createCustomerAnimations() {
-        for (let type = 1; type <= Config.CUSTOMER_COUNT; type++) {
-            const animKey = this.getCustomerAnimKey(type);
-            if (this.scene.anims.exists(animKey)) continue;
-
-            const frameNames = this.getCustomerFrameNames(type);
-            if (!frameNames.length) continue;
-
-            const atlasKey = this.getCustomerAtlasKey(type);
-            const frames = frameNames.map(name => atlasKey && this.scene.textures.exists(atlasKey)
-                ? { key: atlasKey, frame: name }
-                : { key: name });
-
-            this.scene.anims.create({
-                key: animKey,
-                frames,
-                frameRate: 12,
-                repeat: -1
-            });
-        }
-    }
 
     setOrderRequirements(orderRequirements, rewardAmount) {
         this.orderRequirements = orderRequirements.map(item => ({ ...item, isSatisfied: false }));
         this.rewardAmount = rewardAmount;
         this.isSatisfied = false;
+        this.waitingTime = 0;
+        this.waitStage = 0;
         this.giveButton.setAlpha(0.4);
         this.updateOrderIcons();
+        if (this.portraitSprite && typeof this.portraitSprite.setAnimation === 'function') {
+            this.portraitSprite.setAnimation(0, 'idle', true);
+        }
 
         if (this.rewardText) {
             this.rewardText.setText(`x${rewardAmount}`);
@@ -289,13 +270,16 @@ export default class CustomerSystem {
 
         this.isSatisfied = false;
 
-        const animKey = this.getCustomerAnimKey(this.portraitId);
-        if (this.scene.anims.exists(animKey)) {
-            this.portraitSprite.play(animKey);
-        } else {
-            const initial = this.getCustomerInitialFrame(this.portraitId);
-            this.portraitSprite.setTexture(initial.textureKey, initial.frame);
-        }
+        const spineKey = this.getSpineKey(this.portraitId);
+        const oldSprite = this.portraitSprite;
+        const prevX = oldSprite ? oldSprite.x : -130;
+        const prevY = oldSprite ? oldSprite.y : 20;
+        if (oldSprite) oldSprite.destroy();
+
+        this.portraitSprite = this.createSpine(prevX, prevY, spineKey, 'idle', true)
+            .setScale(0.25)
+            .setDepth(5);
+        this.container.add(this.portraitSprite);
 
         this.giveButton.setAlpha(0.4);
 
@@ -363,6 +347,18 @@ export default class CustomerSystem {
         this.isSatisfied = matchedItems.length === this.orderRequirements.length;
         this.giveButton.setAlpha(this.isSatisfied ? 1 : 0.4);
 
+        if (this.isSatisfied) {
+            if (this.portraitSprite && typeof this.portraitSprite.setAnimation === 'function') {
+                this.portraitSprite.setAnimation(0, 'happy', true);
+            }
+        } else {
+            if (this.portraitSprite && typeof this.portraitSprite.setAnimation === 'function') {
+                const alertAnims = ['idle', 'worried', 'angry', 'sigh'];
+                const anim = alertAnims[Math.min(this.waitStage, alertAnims.length - 1)];
+                this.portraitSprite.setAnimation(0, anim, true);
+            }
+        }
+
         if (this.onOrderStatusChanged) this.onOrderStatusChanged(this.isSatisfied, this.giveButton);
     }
 
@@ -406,6 +402,19 @@ export default class CustomerSystem {
     }
 
     update(time, delta) {
+        if (!this.isSatisfied && this.orderRequirements && this.orderRequirements.length) {
+            this.waitingTime += delta;
+
+            if (this.waitingTime >= 4000) {
+                this.waitingTime -= 4000;
+                this.waitStage = Math.min(this.waitStage + 1, 3);
+                const alertAnims = ['idle', 'worried', 'angry', 'sigh'];
+                if (this.portraitSprite && typeof this.portraitSprite.setAnimation === 'function') {
+                    this.portraitSprite.setAnimation(0, alertAnims[this.waitStage], true);
+                }
+            }
+        }
+
         if (this.portraitSprite && this.cloudSprite && this.container && this.boardContainer) {
             if (this.container.scaleY !== 0 && this.container.scaleX !== 0) {
 

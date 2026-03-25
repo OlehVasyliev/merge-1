@@ -39,13 +39,29 @@ module.exports.load = function() {
                 })();
             } else if(files[i].slice(files[i].length - 4, files[i].length) === 'json') {
                 fs.readFile('assets/spine/' + files[i], 'utf8', (err, json) => {
-                    this.resources += 'window.App.resources.spine.' + files[i] + ' = ' + "'" + JSON.minify(json) + "'" + ';';
+                    let safeJson = json;
+                    if (files[i] === 'B03_SushiChef.json') {
+                        safeJson = safeJson.replace(/B03_Sushi Chef\//g, 'B03_SushiChef/');
+                        safeJson = safeJson.replace(/B03_Sushi Chef\.png/g, 'B03_SushiChef.png');
+                    }
+                    let safeJsonString;
+                    try {
+                        safeJsonString = JSON.stringify(JSON.parse(safeJson));
+                    } catch(e) {
+                        // на всякий случай сохраняем чтобы не падало
+                        safeJsonString = JSON.stringify(safeJson);
+                    }
+                    this.resources += 'window.App.resources.spine.' + files[i] + ' = ' + JSON.stringify(safeJsonString) + ';';
                 });
             } else if(files[i].slice(files[i].length - 5, files[i].length) === 'atlas') {
                 this.resources += 'window.App.resources.spine.' + files[i].slice(0, -6) + ' = {};';
                 fs.readFile('assets/spine/' + files[i], 'utf8', (err, atlas) => {
-                    atlas = atlas.replace(new RegExp("\n","g"), "\\n");
-                    this.resources += 'window.App.resources.spine.' + files[i] + ' = ' + "'" + atlas + "'" + ';';
+                    let safeAtlas = atlas;
+                    if (files[i] === 'B03_SushiChef.atlas') {
+                        safeAtlas = safeAtlas.replace(/B03_Sushi Chef\.png/g, 'B03_SushiChef.png');
+                        safeAtlas = safeAtlas.replace(/B03_Sushi Chef\//g, 'B03_SushiChef/');
+                    }
+                    this.resources += 'window.App.resources.spine.' + files[i] + ' = ' + JSON.stringify(safeAtlas) + ';';
                 });
             }
         }

@@ -206,9 +206,26 @@ export default class InputSystem {
                 }
             });
         } else {
+            if (item.sprite) {
+                // безопасное удаление/добавление внутри контейнеров, чтобы не ломать removeFromDisplayList
+                try {
+                    if (item.sprite.parentContainer) {
+                        item.sprite.parentContainer.remove(item.sprite, false);
+                    } else if (mc) {
+                        mc.remove(item.sprite, false);
+                    }
+                } catch (e) {
+                    console.warn('InputSystem: safe remove failed', e);
+                }
 
-            mc.remove(item.sprite, false);
-            bc.add(item.sprite);
+                try {
+                    if (bc) {
+                        bc.add(item.sprite);
+                    }
+                } catch (e) {
+                    console.warn('InputSystem: safe add failed', e);
+                }
+            }
         }
 
     }

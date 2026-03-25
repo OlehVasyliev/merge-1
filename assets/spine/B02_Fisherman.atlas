@@ -1,0 +1,139 @@
+
+B02_Fisherman.png
+size: 855,541
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+B02_Fisherman/arm_L1
+  rotate: true
+  xy: 581, 223
+  size: 130, 104
+  orig: 130, 104
+  offset: 0, 0
+  index: -1
+B02_Fisherman/arm_L2
+  rotate: true
+  xy: 458, 22
+  size: 139, 110
+  orig: 139, 110
+  offset: 0, 0
+  index: -1
+B02_Fisherman/arm_R1
+  rotate: true
+  xy: 570, 76
+  size: 123, 121
+  orig: 123, 121
+  offset: 0, 0
+  index: -1
+B02_Fisherman/arm_R2
+  rotate: false
+  xy: 693, 124
+  size: 108, 92
+  orig: 109, 92
+  offset: 0, 0
+  index: -1
+B02_Fisherman/bicep_L1
+  rotate: false
+  xy: 758, 412
+  size: 84, 127
+  orig: 84, 128
+  offset: 0, 0
+  index: -1
+B02_Fisherman/bicep_L2
+  rotate: false
+  xy: 693, 6
+  size: 80, 116
+  orig: 80, 116
+  offset: 0, 0
+  index: -1
+B02_Fisherman/bicep_R1
+  rotate: false
+  xy: 775, 12
+  size: 78, 110
+  orig: 84, 110
+  offset: 0, 0
+  index: -1
+B02_Fisherman/bicep_R2
+  rotate: true
+  xy: 687, 218
+  size: 101, 99
+  orig: 101, 100
+  offset: 0, 0
+  index: -1
+B02_Fisherman/body
+  rotate: false
+  xy: 268, 163
+  size: 210, 376
+  orig: 210, 376
+  offset: 0, 0
+  index: -1
+B02_Fisherman/emo_1
+  rotate: true
+  xy: 248, 10
+  size: 147, 108
+  orig: 150, 121
+  offset: 3, 13
+  index: -1
+B02_Fisherman/emo_2
+  rotate: false
+  xy: 687, 321
+  size: 136, 79
+  orig: 150, 121
+  offset: 5, 13
+  index: -1
+B02_Fisherman/emo_3
+  rotate: true
+  xy: 663, 402
+  size: 137, 93
+  orig: 140, 97
+  offset: 0, 1
+  index: -1
+B02_Fisherman/emo_4
+  rotate: true
+  xy: 134, 2
+  size: 155, 112
+  orig: 156, 113
+  offset: 0, 0
+  index: -1
+B02_Fisherman/emo_5
+  rotate: true
+  xy: 2, 10
+  size: 147, 130
+  orig: 155, 144
+  offset: 2, 4
+  index: -1
+B02_Fisherman/emo_6
+  rotate: true
+  xy: 480, 201
+  size: 152, 99
+  orig: 157, 122
+  offset: 2, 22
+  index: -1
+B02_Fisherman/emo_7
+  rotate: true
+  xy: 358, 5
+  size: 156, 98
+  orig: 159, 105
+  offset: 2, 5
+  index: -1
+B02_Fisherman/head
+  rotate: true
+  xy: 2, 159
+  size: 380, 264
+  orig: 380, 266
+  offset: 0, 2
+  index: -1
+B02_Fisherman/sigh
+  rotate: false
+  xy: 570, 30
+  size: 84, 44
+  orig: 86, 46
+  offset: 0, 0
+  index: -1
+B02_Fisherman/tail
+  rotate: false
+  xy: 480, 355
+  size: 181, 184
+  orig: 181, 184
+  offset: 0, 0
+  index: -1
