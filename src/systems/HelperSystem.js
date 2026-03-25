@@ -29,6 +29,7 @@ export default class HelperSystem {
         this.fingerTween = null;
 
         this._resizing = false;
+        this.locked = false;
     }
 
     init() {
@@ -46,6 +47,7 @@ export default class HelperSystem {
 
     
     setCustomerOrder(type, level) {
+        if (this.locked) return;
         if (this.onlyPointToGiveButton) {
             // Когда заказ готов, не предлагаем мерж — продолжаем указывать на кнопку.
             if (this.targetGiveButton) {
@@ -82,6 +84,7 @@ export default class HelperSystem {
 
     
     pointToGiveButton(button) {
+        if (this.locked) return;
         if (!button) return;
         if (this.isPointingAtButton && this.targetGiveButton === button) return;
 

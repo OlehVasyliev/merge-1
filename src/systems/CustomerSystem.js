@@ -95,7 +95,7 @@ export default class CustomerSystem {
         const cloudY = (this.tableTopY || -200) + (cloudHeight / 2) - 20; // Привязка к столу
         
         this.cloudSprite = this.scene.add.image(-80, cloudY - 26, 'customer_cloude_of_proucts')
-            .setDisplaySize(120, cloudHeight)
+            .setDisplaySize(120*1.2, cloudHeight*1.2)
             .setDepth(15);
 
         this.boardContainer.add(this.cloudSprite);
@@ -425,8 +425,8 @@ export default class CustomerSystem {
                 const portraitLocalY = (cloudWorldY - this.container.y) / this.container.scaleY;
 
                 const offsetX = this._slideOffsetX || 0;
-                this.portraitSprite.x = portraitLocalX + 20 + offsetX;
-                this.portraitSprite.y = portraitLocalY - 40;
+                this.portraitSprite.x = portraitLocalX + offsetX;
+                this.portraitSprite.y = portraitLocalY + 10;
             }
         }
     }

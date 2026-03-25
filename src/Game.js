@@ -22,6 +22,7 @@ export default class Game extends ParentScene {
         this.createCustomerArea();
         this.createBoard();
         this.createCTA();
+        this.createFinalPopup();
         this.initSystems();
 
         Utils.addAudio(this, 'music_bg', 1.0, true);
@@ -116,10 +117,34 @@ export default class Game extends ParentScene {
         tableImage.setDepth(-1);
         this.tableImage = tableImage;
         this.boardContainer.add(this.tableImage);
+
+        this.updateCustomerBgSize();
+
         this.mainContainer.add(this.boardContainer);
     }
 
     createCustomerArea() {
+        // Фон позади кастомера (customer_bg), масштабируется на ширину экрана,
+        // высота от топа до верхнего края стола.
+        this.customerBg = this.add.image(0, 0, 'customer_bg')
+            .setOrigin(0.5, 0)
+            .setDepth(-5);
+
+        // Нужные свойства, чтобы App.scaleContainer не затирал позицию в процессе resize
+        this.customerBg.addProperties(["pos", "scale"]);
+        this.customerBg.setCustomPosition(0, 0).setAlign("Top");
+        this.customerBg.px = 0;
+        this.customerBg.py = 0;
+        this.customerBg.lx = 0;
+        this.customerBg.ly = 0;
+        this.customerBg.pScaleX = 1;
+        this.customerBg.pScaleY = 1;
+        this.customerBg.lScaleX = 1;
+        this.customerBg.lScaleY = 1;
+
+        this.mainContainer.add(this.customerBg);
+        this.updateCustomerBgSize();
+
         this.customerContainer = this.add.container(0, 0);
         this.customerContainer.addProperties(["pos", "scale"]);
         this.customerContainer.setCustomPosition(0, 0).setAlign("Top");
@@ -139,6 +164,19 @@ export default class Game extends ParentScene {
         this.customerContainer.lScaleX = customerScale;
         this.customerContainer.lScaleY = customerScale;
         this.mainContainer.add(this.customerContainer);
+    }
+
+    updateCustomerBgSize() {
+        if (!this.customerBg) return;
+
+        const topY = this.game.size.top;
+        const targetY = this.tableImage ? this.tableImage.getBounds().top : this.game.size.bottom;
+        const width = this.game.size.right - this.game.size.left;
+        const height = Math.max(0, targetY - topY);
+
+        this.customerBg
+            .setPosition(this.game.size.x, topY)
+            .setDisplaySize(width, height);
     }
 
     createCTA() {
@@ -161,6 +199,105 @@ export default class Game extends ParentScene {
             if (window.App.network) window.App.network.ctaClick();
         });
         this.mainContainer.add(this.ctaButton);
+    }
+
+    createFinalPopup() {
+        this.finalPopupContainer = this.add.container(0, 0);
+        this.finalPopupContainer.addProperties(["pos", "scale"]);
+        this.finalPopupContainer.setCustomPosition(0, 0).setAlign("Center");
+        this.finalPopupContainer.setDepth(1000);
+        this.finalPopupContainer.setVisible(false);
+
+        this.popupOverlay = this.add.rectangle(0, 0, 4000, 4000, 0x000000, 0.7);
+        this.popupOverlay.setInteractive();
+        this.finalPopupContainer.add(this.popupOverlay);
+
+        this.popupContent = this.add.container(0, 0);
+        this.finalPopupContainer.add(this.popupContent);
+
+        this.finalCard = this.add.image(0, 0, 'final_card');
+        this.popupContent.add(this.finalCard);
+
+        const cW = this.finalCard.width || 800;
+        const cH = this.finalCard.height || 1000;
+
+        // Кнопка 40% от ширины карточки с сохранением пропорций
+        const btnTargetW = cW * 0.4;
+        const btnNativeW = 400; // fallback, реальный размер узнаём после добавления
+        const btnY = cH * 0.25;
+
+        this.continueBtn = this.add.image(0, btnY, 'btn_continue');
+        const btnScale = btnTargetW / (this.continueBtn.width || btnNativeW);
+        this.continueBtn.setScale(btnScale);
+        this.continueBtn.setInteractive();
+        this.continueBtn.on('pointerdown', () => {
+            this.game.network.complete();
+            this.game.network.openStore();
+        });
+        this.popupContent.add(this.continueBtn);
+
+        this.popupFinger = this.add.image(0, btnY, 'helper_finger').setOrigin(0.2, 0.1).setAlpha(0).setScale(3.2);
+        this.popupContent.add(this.popupFinger);
+
+        this.mainContainer.add(this.finalPopupContainer);
+    }
+
+    showFinalPopup() {
+        if (this.isFinalPopupShown) return;
+        this.isFinalPopupShown = true;
+
+        // Блокируем все хелперы на доске — ни мерж-подсказок, ни кнопки give
+        if (this.helperSystem) {
+            this.helperSystem.locked = true;
+            this.helperSystem.clearHint();
+        }
+
+        this.finalPopupContainer.setVisible(true);
+        this.popupContent.setScale(0);
+        this.popupOverlay.setAlpha(0);
+
+        this.tweens.add({
+            targets: this.popupOverlay,
+            alpha: 0.7,
+            duration: 300
+        });
+
+        const btnBaseScaleX = this.continueBtn.scaleX;
+        const btnBaseScaleY = this.continueBtn.scaleY;
+
+        this.tweens.add({
+            targets: this.popupContent,
+            scaleX: 1,
+            scaleY: 1,
+            duration: 600,
+            ease: 'Back.easeOut',
+            onComplete: () => {
+                this.tweens.add({
+                    targets: this.continueBtn,
+                    scaleX: btnBaseScaleX * 1.06,
+                    scaleY: btnBaseScaleY * 1.06,
+                    yoyo: true,
+                    repeat: -1,
+                    duration: 600
+                });
+
+                this.time.delayedCall(2000, () => {
+                    this.popupFinger.setAlpha(1);
+                    const fx = this.continueBtn.x + this.continueBtn.displayWidth * 0.2;
+                    const fy = this.continueBtn.y + this.continueBtn.displayHeight * 0.15;
+                    this.popupFinger.setPosition(fx, fy);
+                    const baseScale = 3.2;
+                    this.tweens.add({
+                        targets: this.popupFinger,
+                        scaleX: baseScale * 0.82,
+                        scaleY: baseScale * 0.82,
+                        yoyo: true,
+                        repeat: -1,
+                        duration: 400
+                    });
+                });
+            }
+        });
     }
 
     
@@ -197,9 +334,17 @@ export default class Game extends ParentScene {
         this.economySystem = new EconomySystem(this, this.gridSystem, this.customerSystem, this.uiManager, this.globalState);
         this.economySystem.init();
 
+        this.fulfilledOrdersCount = 0;
         this.customerSystem.onOrderFulfilled = () => {
             this.helperSystem.clearCustomerOrder();
             this.economySystem.processOrder();
+
+            this.fulfilledOrdersCount++;
+            if (this.fulfilledOrdersCount >= 3) {
+                this.time.delayedCall(1500, () => {
+                    this.showFinalPopup();
+                });
+            }
         };
 
         this.customerSystem.onNewCustomer = (type, level) => {
@@ -307,6 +452,25 @@ export default class Game extends ParentScene {
                 this.tableTopY = topOfBoard - tableH;
             }        }
 
+        if (this.finalPopupContainer && this.finalCard) {
+            const availW = this.game.size.right - this.game.size.left;
+            const availH = this.game.size.bottom - this.game.size.top;
+            
+            const cardW = this.finalCard.width || 800;
+            const cardH = this.finalCard.height || 1000;
+            
+            const sScale = Math.min((availW * 0.9) / cardW, (availH * 0.8) / cardH);
+            
+            this.finalPopupContainer.pScaleX = sScale;
+            this.finalPopupContainer.pScaleY = sScale;
+            this.finalPopupContainer.lScaleX = sScale;
+            this.finalPopupContainer.lScaleY = sScale;
+            this.finalPopupContainer.px = 0;
+            this.finalPopupContainer.py = 0;
+            this.finalPopupContainer.lx = 0;
+            this.finalPopupContainer.ly = 0;
+        }
+
         if (this.customerContainer) {
             const availH = this.game.size.bottom - this.game.size.top;
             const customerHeightRatio = Config.CUSTOMER_HEIGHT_RATIO;
@@ -320,6 +484,8 @@ export default class Game extends ParentScene {
             this.customerContainer.lScaleX = customerScale;
             this.customerContainer.lScaleY = customerScale;
         }
+
+        this.updateCustomerBgSize();
 
         this._resizeFromSelf = true;
         this.game.size.resize();
