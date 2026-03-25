@@ -139,14 +139,22 @@ export default class CustomerSystem {
         this.isSatisfied = false;
         this.waitingTime = 0;
         this.waitStage = 0;
-        this.giveButton.setAlpha(0.4);
+
+        if (this.giveButton) {
+            this.giveButton.setAlpha(0.4);
+            if (this.giveButton.setInteractive) {
+                this.giveButton.setInteractive();
+            }
+        }
+
         this.updateOrderIcons();
         if (this.portraitSprite && typeof this.portraitSprite.setAnimation === 'function') {
             this.portraitSprite.setAnimation(0, 'idle', true);
         }
 
         if (this.rewardText) {
-            this.rewardText.setText(`x${rewardAmount}`);
+            // отобразить усиленное вознаграждение: в 5 раз больше
+            this.rewardText.setText(`x${rewardAmount * 5}`);
         }
 
         if (this.onNewCustomer && this.orderRequirements.length) {
@@ -256,11 +264,50 @@ export default class CustomerSystem {
         const currentIndex = (this.globalState && this.globalState.currentCustomerIndex) || 0;
         if (currentIndex < Config.CUSTOMER_PROGRESSION.length) {
             const entry = Config.CUSTOMER_PROGRESSION[currentIndex];
-            const boardTypes = this.getBoardItemTypes();
-            const orderRequirements = entry.orderRequirements.map(req => {
-                const productType = boardTypes[Math.floor(Math.random() * boardTypes.length)];
-                return { productType, targetLevel: req.targetLevel, isSatisfied: false };
+            const boardItems = this.gridSystem && this.gridSystem.items ? this.gridSystem.items : [];
+            
+            // Группируем предметы на доске по типу
+            const itemsByType = {};
+            boardItems.forEach(item => {
+                if (!itemsByType[item.type]) itemsByType[item.type] = [];
+                itemsByType[item.type].push(item);
             });
+
+            // Функция для проверки, можно ли собрать предмет targetLevel из имеющихся предметов типа type
+            const canCraft = (type, targetLevel, availableItems) => {
+                const counts = {};
+                availableItems.filter(i => i.type === type).forEach(i => {
+                    counts[i.level] = (counts[i.level] || 0) + 1;
+                });
+
+                const tempCounts = { ...counts };
+                for (let l = 1; l < targetLevel; l++) {
+                    const pairs = Math.floor((tempCounts[l] || 0) / 2);
+                    tempCounts[l+1] = (tempCounts[l+1] || 0) + pairs;
+                }
+                return (tempCounts[targetLevel] || 0) >= 1;
+            };
+
+            // Ищем типы продуктов, из которых можно собрать ВСЕ требования заказа
+            const validTypes = Object.keys(itemsByType).map(Number).filter(type => {
+                // Для каждого требования в заказе проверяем, можно ли его собрать
+                // Важно: если в заказе несколько предметов, мы упрощаем проверку до "можно ли собрать каждый по отдельности"
+                // или "можно ли собрать сумму уровней". Но по ТЗ (Lvl2, Lvl3, Lvl2+Lvl3) 
+                // мы просто проверяем наличие возможности сборки самого высокого уровня.
+                const maxLevelReq = Math.max(...entry.orderRequirements.map(req => req.targetLevel));
+                return canCraft(type, maxLevelReq, boardItems);
+            });
+
+            const selectedType = validTypes.length > 0 
+                ? validTypes[Math.floor(Math.random() * validTypes.length)]
+                : (boardItems.length > 0 ? boardItems[0].type : 1);
+
+            const orderRequirements = entry.orderRequirements.map(req => ({
+                productType: selectedType,
+                targetLevel: req.targetLevel,
+                isSatisfied: false
+            }));
+
             this.setOrderRequirements(orderRequirements, entry.rewardAmount);
         } else {
             const orderRequirements = this.generateProceduralOrder();
@@ -364,6 +411,12 @@ export default class CustomerSystem {
 
     onGiveClicked() {
         if (!this.isSatisfied) return;
+
+        // моментально блокируем кнопку, чтобы нельзя было кликнуть второй раз
+        if (this.giveButton && this.giveButton.disableInteractive) {
+            this.giveButton.disableInteractive();
+            this.giveButton.setAlpha(0.4);
+        }
 
         // очищаем визуальные блокировки сразу при сдаче заказа
         if (this.gridSystem && this.gridSystem.clearAllLocks) {

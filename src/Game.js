@@ -208,7 +208,7 @@ export default class Game extends ParentScene {
         this.finalPopupContainer.setDepth(1000);
         this.finalPopupContainer.setVisible(false);
 
-        this.popupOverlay = this.add.rectangle(0, 0, 4000, 4000, 0x000000, 0.7);
+        this.popupOverlay = this.add.rectangle(0, 0, 4000, 4000, 0x000000, 0.85);
         this.popupOverlay.setInteractive();
         this.finalPopupContainer.add(this.popupOverlay);
 
@@ -246,10 +246,15 @@ export default class Game extends ParentScene {
         if (this.isFinalPopupShown) return;
         this.isFinalPopupShown = true;
 
-        // Блокируем все хелперы на доске — ни мерж-подсказок, ни кнопки give
+        // Блокируем все хелперы на доске — оставляем только на continue в финалке
         if (this.helperSystem) {
-            this.helperSystem.locked = true;
+            this.helperSystem.clearCustomerOrder();
             this.helperSystem.clearHint();
+            this.helperSystem.locked = true;
+
+            this.helperSystem.onlyPointToGiveButton = true;
+            this.helperSystem.targetGiveButton = this.continueBtn;
+            this.helperSystem.pointToGiveButton(this.continueBtn);
         }
 
         this.finalPopupContainer.setVisible(true);
@@ -258,7 +263,7 @@ export default class Game extends ParentScene {
 
         this.tweens.add({
             targets: this.popupOverlay,
-            alpha: 0.7,
+            alpha: 0.85,
             duration: 300
         });
 

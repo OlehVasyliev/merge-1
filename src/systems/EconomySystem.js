@@ -18,7 +18,7 @@ export default class EconomySystem {
     
     processOrder() {
         const cs = this.customerSystem;
-        const rewardAmount = cs.rewardAmount;
+        const rewardAmount = cs.rewardAmount * 5; // платят в 5 раз больше за каждый заказ
 
         const matched = cs.getRequiredItems(this.gridSystem);
         if (matched && matched.length) {

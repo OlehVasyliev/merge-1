@@ -24,11 +24,9 @@ export default {
     CTA_AFTER_ORDERS: 3,
 
     CUSTOMER_PROGRESSION: [
-        { orderRequirements: [{ productType: 1, targetLevel: 2 }], rewardAmount: 5 },
-        { orderRequirements: [{ productType: 1, targetLevel: 3 }], rewardAmount: 10 },
-        { orderRequirements: [{ productType: 1, targetLevel: 2 }, { productType: 1, targetLevel: 2 }], rewardAmount: 15 },
-        { orderRequirements: [{ productType: 1, targetLevel: 2 }, { productType: 1, targetLevel: 3 }], rewardAmount: 20 },
-        { orderRequirements: [{ productType: 1, targetLevel: 3 }, { productType: 1, targetLevel: 3 }], rewardAmount: 30 }
+        { orderRequirements: [{ targetLevel: 2 }], rewardAmount: 5 },
+        { orderRequirements: [{ targetLevel: 3 }], rewardAmount: 10 },
+        { orderRequirements: [{ targetLevel: 2 }, { targetLevel: 3 }], rewardAmount: 15 }
     ],
 
     PROCEDURAL_ORDER_MIN_ITEMS: 1,
